@@ -14,3 +14,5 @@ $RECYCLE.BIN/
 *.json
 *.command
 *.vsidx
+2D_Action/Generated
+2D_Action/DirectXGame/Resources/EngineShaders

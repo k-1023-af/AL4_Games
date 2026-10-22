@@ -9,6 +9,28 @@ float Length(const Vector3& v1, const Vector3& v2) {
 	return length;
 }
 
+float Lerp(float start, float end, float t) {
+	t = std::clamp(t, 0.0f, 1.0f);
+	return start + (end - start) * t;
+}
+
+float EaseOut(float start, float end, float t) {
+	t = std::clamp(t, 0.0f, 1.0f);
+	//return start + (end - start) * (1 - std::pow(1 - t, 3));
+	return start + (1.0f - (1.0f - t) * (1.0f - t)) * (end - start);
+}
+
+float EaseIn(float start, float end, float t) {
+	t = std::clamp(t, 0.0f, 1.0f);
+	//return start + (end - start) * std::pow(t, 3);
+	if (t < 0.5f) {
+		return start + (2.0f * t * t) * (end - start);
+	}
+	else {
+		return start + (1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) * 0.5f) * (end - start);
+	}
+}
+
 Vector3 Add(const Vector3& v1, const Vector3& v2) {
 	return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 }
@@ -109,6 +131,156 @@ Matrix4x4 Multiply(const Matrix4x4& a, const Matrix4x4& b) {
 			result.m[row][column] = a.m[row][0] * b.m[0][column] + a.m[row][1] * b.m[1][column] + a.m[row][2] * b.m[2][column] + a.m[row][3] * b.m[3][column];
 		}
 	}
+	return result;
+}
+
+Matrix4x4 MakeScale(const Vector3& scale) {
+	Matrix4x4 result = { 0 };
+	result.m[0][0] = scale.x;
+	result.m[1][1] = scale.y;
+	result.m[2][2] = scale.z;
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
+
+Matrix4x4 MakeRotatedXYZ(const Matrix4x4& x, const Matrix4x4& y, const Matrix4x4& z) {
+	Matrix4x4 result = Multiply(x, Multiply(y, z));
+	return result;
+}
+
+//Matrix4x4 MakeRotatedXYZ(const Vector3& rotation) {
+//
+//}
+
+Matrix4x4 MakeRotatedX(const float radian) {
+	Matrix4x4 result;
+	result.m[0][0] = 1;
+	result.m[0][1] = 0;
+	result.m[0][2] = 0;
+	result.m[0][3] = 0;
+
+	result.m[1][0] = 0;
+	result.m[1][1] = std::cos(radian);
+	result.m[1][2] = std::sin(radian);
+	result.m[1][3] = 0;
+
+	result.m[2][0] = 0;
+	result.m[2][1] = -std::sin(radian);
+	result.m[2][2] = std::cos(radian);
+	result.m[2][3] = 0;
+
+	result.m[3][0] = 0;
+	result.m[3][1] = 0;
+	result.m[3][2] = 0;
+	result.m[3][3] = 1;
+
+	return result;
+}
+
+Matrix4x4 MakeRotatedY(const float radian) {
+	Matrix4x4 result;
+	result.m[0][0] = std::cos(radian);
+	result.m[0][1] = 0;
+	result.m[0][2] = -std::sin(radian);
+	result.m[0][3] = 0;
+
+	result.m[1][0] = 0;
+	result.m[1][1] = 1;
+	result.m[1][2] = 0;
+	result.m[1][3] = 0;
+
+	result.m[2][0] = std::sin(radian);
+	result.m[2][1] = 0;
+	result.m[2][2] = std::cos(radian);
+	result.m[2][3] = 0;
+
+	result.m[3][0] = 0;
+	result.m[3][1] = 0;
+	result.m[3][2] = 0;
+	result.m[3][3] = 1;
+
+	return result;
+}
+
+Matrix4x4 MakeRotatedZ(const float radian) {
+	Matrix4x4 result;
+	result.m[0][0] = std::cos(radian);
+	result.m[0][1] = std::sin(radian);
+	result.m[0][2] = 0;
+	result.m[0][3] = 0;
+
+	result.m[1][0] = -std::sin(radian);
+	result.m[1][1] = std::cos(radian);
+	result.m[1][2] = 0;
+	result.m[1][3] = 0;
+
+	result.m[2][0] = 0;
+	result.m[2][1] = 0;
+	result.m[2][2] = 1;
+	result.m[2][3] = 0;
+
+	result.m[3][0] = 0;
+	result.m[3][1] = 0;
+	result.m[3][2] = 0;
+	result.m[3][3] = 1;
+
+	return result;
+}
+
+Matrix4x4 MakeTranslation(const Vector3& translation) {
+	Matrix4x4 result;
+	result.m[0][0] = 1;
+	result.m[0][1] = 0;
+	result.m[0][2] = 0;
+	result.m[0][3] = 0;
+
+	result.m[1][0] = 0;
+	result.m[1][1] = 1;
+	result.m[1][2] = 0;
+	result.m[1][3] = 0;
+
+	result.m[2][0] = 0;
+	result.m[2][1] = 0;
+	result.m[2][2] = 1;
+	result.m[2][3] = 0;
+
+	result.m[3][0] = translation.x;
+	result.m[3][1] = translation.y;
+	result.m[3][2] = translation.z;
+	result.m[3][3] = 1;
+
+	return result;
+}
+
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translation) {
+	Matrix4x4 rotatedX = MakeRotatedX(rotate.x);
+	Matrix4x4 rotatedY = MakeRotatedY(rotate.y);
+	Matrix4x4 rotatedZ = MakeRotatedZ(rotate.z);
+
+	Matrix4x4 rotatedXYZMatrix = MakeRotatedXYZ(rotatedX, rotatedY, rotatedZ);
+
+	Matrix4x4 result;
+	result.m[0][0] = scale.x * rotatedXYZMatrix.m[0][0];
+	result.m[0][1] = scale.x * rotatedXYZMatrix.m[0][1];
+	result.m[0][2] = scale.x * rotatedXYZMatrix.m[0][2];
+	result.m[0][3] = 0;
+
+	result.m[1][0] = scale.y * rotatedXYZMatrix.m[1][0];
+	result.m[1][1] = scale.y * rotatedXYZMatrix.m[1][1];
+	result.m[1][2] = scale.y * rotatedXYZMatrix.m[1][2];
+	result.m[1][3] = 0;
+
+	result.m[2][0] = scale.z * rotatedXYZMatrix.m[2][0];
+	result.m[2][1] = scale.z * rotatedXYZMatrix.m[2][1];
+	result.m[2][2] = scale.z * rotatedXYZMatrix.m[2][2];
+	result.m[2][3] = 0;
+
+	result.m[3][0] = translation.x;
+	result.m[3][1] = translation.y;
+	result.m[3][2] = translation.z;
+	result.m[3][3] = 1;
+
 	return result;
 }
 

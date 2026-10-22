@@ -16,11 +16,15 @@ public:
 
 	void SetShowGameOver(bool v) { showGameOver_ = v; }
 
+	TitleScene();
 	~TitleScene();
 
 private:
 	Request request_ = Request::None;
 	bool showGameOver_ = false;
+
+	uint32_t titleSprite_ = 0;
+	Sprite* titleBackground_ = nullptr;
 
 };
 
