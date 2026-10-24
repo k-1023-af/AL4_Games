@@ -1,15 +1,18 @@
 #include "Player.h"
+#include "MapChip.h"
+#include "Enemy.h"
 
 void Player::Initialize(Camera* camera, const Vector3& position) {
 	//-----------------------------
 	camera_ = camera;
 
 	playerTransform_.Initialize();
-	playerTransform_.scale_ = { 0.5f, 0.5f, 0.5f };
+	playerTransform_.scale_ = { 0.7f, 0.7f, 0.7f };
 	playerTransform_.rotation_.y = halfPi; // 180 degrees in radians
 	playerTransform_.translation_ = position;
 
 	playerModel_ = Model::CreateFromOBJ("player", true);
+
 
 	// modelAttack_
 	//-----------------------------
@@ -29,7 +32,6 @@ void Player::Initialize(Camera* camera, const Vector3& position) {
 
 	attackPhase_ = AttackPhase::kCoil;
 	attackParameter_ = 0;
-
 }
 
 void Player::Update() {
@@ -139,110 +141,102 @@ void Player::SetMapChipField(MapChip* mapChipField) {
 }
 
 void Player::MapCollisionX(CollisionMapInfo& info) {
-	if (!mapChipField_)
-		return;
-
-	Vector3 prevCenter = { playerTransform_.translation_.x - velocity_.x, playerTransform_.translation_.y, playerTransform_.translation_.z };
-
+	if (!mapChipField_) return;
+	
+	Vector3 prevCenter = {
+		playerTransform_.translation_.x - velocity_.x,
+		playerTransform_.translation_.y,
+		playerTransform_.translation_.z
+	};
+	
 	std::array<Vector3, 4> positionOld;
 	std::array<Vector3, 4> positionNew;
-
 	for (uint32_t i = 0; i < 4; ++i) {
 		positionOld[i] = GetCornerPosition(prevCenter, static_cast<Corner>(i));
 		positionNew[i] = GetCornerPosition(playerTransform_.translation_, static_cast<Corner>(i));
 	}
-
+	
 	info.wallFlagL = false;
 	info.wallFlagR = false;
-
-	if (info.move.x <= 0.0f) { // moving left
-		MapChip::IndexSet indexSet;
-		MapChipType mapChipType;
-		MapChipType mapChipTypeNext;
-		bool hit = false;
-
-		/// left bottom check
-		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kLeftBottom]);
-		mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex - 1, indexSet.yIndex);
-		if (mapChipType != MapChipType::kBlock && mapChipTypeNext == MapChipType::kBlock) {
-			hit = true;
-		}
-		if (hit) {
-			indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kLeftBottom]);
-			MapChip::IndexSet indexSetNow;
-			indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftBottom]);
-			if (indexSetNow.xIndex != indexSet.xIndex) {
-				MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-				playerTransform_.translation_.x = rect.left + (kWidth / 2.0f) + kBlank;
-				info.wallFlagL = true;
-				return;
+	
+	//------------------------------------------------------------
+	// Moving LEFT
+	//------------------------------------------------------------
+	if (info.move.x <= 0.0f) {
+	
+		auto CheckLeft = [&](Corner corner) {
+			MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionOld[corner]);
+			MapChipType cur = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+			MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex - 1, idx.yIndex);
+	
+			// classic block wall
+			bool blockWall = (cur != MapChipType::kBlock && next == MapChipType::kBlock);
+	
+			// slope wall
+			bool slopeWall = false; 
+			if (next == MapChipType::kSlope1R || next == MapChipType::kSlope2R) {
+				slopeWall = true;
 			}
-		}
-		/// left top check
-		hit = false;
-		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kLeftTop]);
-		mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex - 1, indexSet.yIndex);
-		if (mapChipType != MapChipType::kBlock && mapChipTypeNext == MapChipType::kBlock) {
-			hit = true;
-		}
-		if (hit) {
-			indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kLeftTop]);
-			MapChip::IndexSet indexSetNow;
-			indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftTop]);
-			if (indexSetNow.xIndex != indexSet.xIndex) {
-				MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-				playerTransform_.translation_.x = rect.left + (kWidth / 2.0f) + kBlank;
-				info.wallFlagL = true;
-				return;
+			if (next == MapChipType::kSlope3R) {
+				float checkY = positionNew[corner].y;
+				slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex - 1, idx.yIndex, checkY);
 			}
-		}
+			if (next == MapChipType::kSlope2L) {
+				float checkY = positionNew[corner].y;
+				slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex - 1, idx.yIndex, checkY);
+			}
+	
+			if (!blockWall && !slopeWall) return false;
+	
+			MapChip::IndexSet now = mapChipField_->GetMapChipIndexSetByPosition(positionNew[corner]);
+			if (now.xIndex == idx.xIndex) return false;   // still in same cell
+	
+			MapChip::Rect rect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+			playerTransform_.translation_.x = rect.left + (kWidth * 0.5f) + kBlank;
+			info.wallFlagL = true;
+			return true;
+		};
+	
+		if (CheckLeft(kLeftBottom) || CheckLeft(kLeftTop))
+			return;
 	}
 
-	if (info.move.x >= 0.0f) { // moving right
-		MapChip::IndexSet indexSet;
-		MapChipType mapChipType;
-		MapChipType mapChipTypeNext;
-		bool hit = false;
+	//------------------------------------------------------------
+	// Moving RIGHT
+	//------------------------------------------------------------
+	if (info.move.x >= 0.0f) {
 
-		/// right bottom check
-		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kRightBottom]);
-		mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex + 1, indexSet.yIndex);
-		if (mapChipType != MapChipType::kBlock && mapChipTypeNext == MapChipType::kBlock) {
-			hit = true;
-		}
-		if (hit) {
-			indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kRightBottom]);
-			MapChip::IndexSet indexSetNow;
-			indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightBottom]);
-			if (indexSetNow.xIndex != indexSet.xIndex) {
-				MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-				playerTransform_.translation_.x = rect.right - (kWidth / 2.0f) - kBlank;
-				info.wallFlagR = true;
-				return;
+		auto CheckRight = [&](Corner corner) {
+			MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionOld[corner]);
+			MapChipType cur = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+			MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex + 1, idx.yIndex);
+
+			bool blockWall = (cur != MapChipType::kBlock && next == MapChipType::kBlock);
+			bool slopeWall = false;
+			if (next == MapChipType::kSlope1L || next == MapChipType::kSlope2L) {
+				slopeWall = true;
 			}
-		}
-		/// right top check
-		hit = false;
-		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kRightTop]);
-		mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex + 1, indexSet.yIndex);
-		if (mapChipType != MapChipType::kBlock && mapChipTypeNext == MapChipType::kBlock) {
-			hit = true;
-		}
-		if (hit) {
-			indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kRightTop]);
-			MapChip::IndexSet indexSetNow;
-			indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightTop]);
-			if (indexSetNow.xIndex != indexSet.xIndex) {
-				MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-				playerTransform_.translation_.x = rect.right - (kWidth / 2.0f) - kBlank;
-				info.wallFlagR = true;
-				return;
+			if (next == MapChipType::kSlope3L) {
+				float checkY = positionNew[corner].y;
+				slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex + 1, idx.yIndex, checkY);
 			}
-		}
+			if (next == MapChipType::kSlope2R) {
+				float checkY = positionNew[corner].y;
+				slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex + 1, idx.yIndex, checkY);
+			}
+
+			if (!blockWall && !slopeWall) return false;
+
+			MapChip::IndexSet now = mapChipField_->GetMapChipIndexSetByPosition(positionNew[corner]);
+			if (now.xIndex == idx.xIndex) return false;
+
+			MapChip::Rect rect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+			playerTransform_.translation_.x = rect.right - (kWidth * 0.5f) - kBlank;
+			info.wallFlagR = true;
+			return true;
+		};
+
+		if (CheckRight(kRightBottom) || CheckRight(kRightTop)) return;
 	}
 }
 
@@ -276,7 +270,13 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftTop]);
 		mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
 		mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex + 1);
-		if (mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) {
+		if ((mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) || 
+			(mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) ||
+			(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
+			(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
+			(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
+			(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
+			(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R) ){
 			hit = true;
 		}
 		if (hit) {
@@ -337,7 +337,12 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 			highestSurfaceY = (std::max)(highestSurfaceY, rect.top);
 			hitBlock = true;
 		}
-		if (mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L || mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) {
+		if ((mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) || 
+			(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
+			(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
+			(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
+			(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
+			(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R) ){
 			surfaceY = mapChipField_->GetSlopeSurfaceY(
 				indexSet.xIndex,
 				indexSet.yIndex,
@@ -349,6 +354,10 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 
 				if (mapChipType == MapChipType::kSlope1L) info.onSlopeL = true;
 				if (mapChipType == MapChipType::kSlope1R) info.onSlopeR = true;
+				if (mapChipType == MapChipType::kSlope2L) info.onSlopeL = true;
+				if (mapChipType == MapChipType::kSlope2R) info.onSlopeR = true;
+				if (mapChipType == MapChipType::kSlope3L) info.onSlopeL = true;
+				if (mapChipType == MapChipType::kSlope3R) info.onSlopeR = true;
 			}
 		}
 		
@@ -374,7 +383,12 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 			highestSurfaceY = (std::max)(highestSurfaceY, rect.top);
 			hitBlock = true;
 		}
-		if (mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L || mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) {
+		if ((mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) ||
+			(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
+			(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
+			(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
+			(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
+			(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R) ){
 			hitSlopeR = true;
 			surfaceY = mapChipField_->GetSlopeSurfaceY(
 				indexSet.xIndex,
@@ -387,6 +401,10 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 
 				if (mapChipType == MapChipType::kSlope1L) info.onSlopeL = true;
 				if (mapChipType == MapChipType::kSlope1R) info.onSlopeR = true;
+				if (mapChipType == MapChipType::kSlope2L) info.onSlopeL = true;
+				if (mapChipType == MapChipType::kSlope2R) info.onSlopeR = true;
+				if (mapChipType == MapChipType::kSlope3L) info.onSlopeL = true;
+				if (mapChipType == MapChipType::kSlope3R) info.onSlopeR = true;
 			}
 		}
 		

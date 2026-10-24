@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include "KamataEngine.h"
+#include "Function.h"
 
 using namespace KamataEngine;
 
@@ -38,6 +39,14 @@ public:
 	Vector3 GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex);
 
 	float GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX);
+
+	//bool IsSlopeWallLeft(MapChipType type) const { return type == MapChipType::kSlope1L; }
+	//bool IsSlopeWallRight(MapChipType type) const { return type == MapChipType::kSlope1R; }
+	bool isHalfSlopeWall(MapChipType type) const { return type == MapChipType::kSlope2L || type == MapChipType::kSlope2R/* ||
+		type == MapChipType::kSlope3L || type == MapChipType::kSlope3R*/;
+	}
+	bool IsInBottomHalf(uint32_t xIndex, uint32_t yIndex, float posY);
+
 
 	struct IndexSet {
 		uint32_t xIndex;

@@ -74,26 +74,44 @@ Vector3 MapChip::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) {
 }
 
 float MapChip::GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX) {
-    MapChipType type = GetMapChipTypeByIndex(xIndex, yIndex);
-    if (type != MapChipType::kSlope1L && type != MapChipType::kSlope1R)
-        return -10000.0f;   // not a slope
+   MapChipType type = GetMapChipTypeByIndex(xIndex, yIndex);
+	Rect rect = GetRectByIndex(xIndex, yIndex);
 
+	float L = (worldX - rect.left) / (kBlockWidth_);
+	L = std::clamp(L, 0.2f, 2.0f);
+
+    float R = (worldX - rect.left - 0.01f) / (kBlockWidth_);
+    R = std::clamp(R, -0.5f, 0.8f);
+
+	switch (type)
+	{
+	case MapChipType::kSlope1L:	// left high → right low (45°)
+		return Lerp(rect.top + 0.42f, rect.bottom + 0.42f, L);
+
+	case MapChipType::kSlope1R:	// left low → right high (45°)
+		return Lerp(rect.bottom + 0.42f, rect.top + 0.42f, R);
+
+	// ----- ready for future slopes -----
+    case MapChipType::kSlope2L:	// left high → right low (23°)
+        return Lerp(rect.top + 0.25f, rect.bottom + 1.1f, L);
+
+    case MapChipType::kSlope2R:	// left low → right high (23°)
+        return Lerp(rect.bottom + 1.1f, rect.top + 0.25f, R);
+
+    case MapChipType::kSlope3L:	// left high → right low (23°)
+        return Lerp(rect.top - 0.75f, rect.bottom + 0.25f, L);
+
+    case MapChipType::kSlope3R:	// left low → right high (23°)
+        return Lerp(rect.bottom + 0.25f, rect.top - 0.75f, R);
+	default:
+		return -10000.0f;		// not a slope
+	}
+}
+
+bool MapChip::IsInBottomHalf(uint32_t xIndex, uint32_t yIndex, float posY) {
     Rect rect = GetRectByIndex(xIndex, yIndex);
-
-    float t = (worldX - rect.left) / kBlockWidth_ ;   // 0 → 1 across the tile
-    t = std::clamp(t, 0.0f - 0.02f, 1.0f + 0.12f);
-
-    if (type == MapChipType::kSlope1L) {
-        // Left side high, right side low (or the opposite – match model)
-        return std::lerp(rect.top + 0.5f, rect.bottom + 0.17f, t);
-    }
-    t = std::clamp(t, 0.0f, 1.0f - 0.18f);
-    if (type == MapChipType::kSlope1R) {
-        return std::lerp(rect.bottom + 0.15f, rect.top + 0.5f, t);
-    }
-    else {
-        return rect.top;
-    }
+    float midY = (rect.top + rect.bottom) * 0.5f;
+    return posY < midY;
 }
 
 MapChip::IndexSet MapChip::GetMapChipIndexSetByPosition(const Vector3& position) {

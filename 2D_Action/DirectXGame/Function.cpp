@@ -10,7 +10,7 @@ float Length(const Vector3& v1, const Vector3& v2) {
 }
 
 float Lerp(float start, float end, float t) {
-	t = std::clamp(t, 0.0f, 1.0f);
+	//t = std::clamp(t, 0.0f, 1.0f);
 	return start + (end - start) * t;
 }
 

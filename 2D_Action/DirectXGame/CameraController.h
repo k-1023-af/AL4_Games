@@ -38,20 +38,28 @@ private:
 
 	//WorldUpdater* worldUpdater_;
 
-	Vector3 targetOffset_ = { 0.0f, 0.0f, -20.f };
+	Vector3 targetOffset_ = { 0.0f, 0.4f, -50.f };
 
-	static inline const float kInterpolationRate = 0.8f;
+	static inline const float kInterpolationRate = 0.7f;
 
-	static inline const float kVelocityBias = { 2.0f };
+	static inline const float kVelocityBias = { 5.0f };
 
-	static inline const Rect margin = { -8.0f, 8.0f, -6.0f, 6.0f };
+	static inline const Rect margin = { -10.0f, 10.0f, -7.0f, 7.0f };
 
 	//Vector3 Lerp
 
+	// Horizontal dead zone
+	static inline const float kDeadZoneHalfWidth = 1.4f;
+
 	// Horizontal elastic
-	static inline const float kHorizontalBaseLerp = 0.12f;   // minimum follow speed
-	static inline const float kHorizontalSpringGain = 0.045f;  // how much stronger it gets with distance
-	static inline const float kHorizontalMaxLerp = 0.55f;   // clamp so it never becomes instant
+	//static inline const float kHorizontalBaseLerp = 0.12f;   // minimum follow speed
+	//static inline const float kHorizontalSpringGain = 0.045f;  // how much stronger it gets with distance
+	//static inline const float kHorizontalMaxLerp = 0.55f;   // clamp so it never becomes instant
+
+	// Look ahead
+	static inline const float kLookAheadMin = 5.0f;
+	static inline const float kLookAheadPerSpeed = 3.6f;
+	static inline const float kLookAheadMax = 15.0f;
 
 	// Vertical dead-zone
 	static inline const float kDeadZoneHalfHeight = 3.4f;    // world units the player can move freely

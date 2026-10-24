@@ -20,15 +20,30 @@ void CameraController::Update() {
 		targetWorldTransform.translation_.y + targetOffset_.y,
 		targetWorldTransform.translation_.z + targetOffset_.z,
 	};
-	desired.x += targetVelocity.x * (kVelocityBias * 3);
+	//desired.x += targetVelocity.x * (kVelocityBias * 3);
+
+	float speedX = std::abs(targetVelocity.x);
+	float lookAhead = kLookAheadMin + speedX * kLookAheadPerSpeed;
+	lookAhead = std::clamp(lookAhead, kLookAheadMin, kLookAheadMax);
+
+	if (targetVelocity.x > 0.1f) {			//looking right
+		desired.x += lookAhead;
+	}
+	else if (targetVelocity.x < -0.01f) {	//looking left
+		desired.x -= lookAhead;
+	}
 
 	// ---------- Horizontal (elastic movement)
 
-	float diffX = desired.x - camera_->translation_.x;
-	float tX = kHorizontalBaseLerp + std::abs(diffX) * kHorizontalSpringGain;
-	tX = std::clamp(tX, kHorizontalBaseLerp, kHorizontalMaxLerp);
-
-	camera_->translation_.x = Lerp(camera_->translation_.x, desired.x, tX);
+	//float diffX = desired.x - camera_->translation_.x;
+	//
+	//
+	//if (std::abs(diffX) > kDeadZoneHalfWidth) {		// dead zone
+	//	float tX = kHorizontalBaseLerp + std::abs(diffX) * kHorizontalSpringGain;
+	//	tX = std::clamp(tX, kHorizontalBaseLerp, kHorizontalMaxLerp);
+	//
+	//	camera_->translation_.x = Lerp(camera_->translation_.x, desired.x, tX);
+	//}
 
 	// ----------- Vertical (dead zone)
 
@@ -47,11 +62,17 @@ void CameraController::Update() {
 	}
 
 	// old (backup)
-	//camera_->translation_.x = (targetWorldTransform.translation_.x + targetOffset_.x) + (targetVelocity.x * kVelocityBias);
+	camera_->translation_.x = (targetWorldTransform.translation_.x + targetOffset_.x) + (targetVelocity.x * kVelocityBias);
 	//camera_->translation_.y = (targetWorldTransform.translation_.y + targetOffset_.y) + (targetVelocity.y * kVelocityBias);
-	camera_->translation_.z = (targetWorldTransform.translation_.z + targetOffset_.z) + (targetVelocity.z * kVelocityBias);
-	//
-	//camera_->translation_ = Lerp(camera_->translation_, targetWorldTransform.translation_, kInterpolationRate);
+	//camera_->translation_.z = (targetWorldTransform.translation_.z + targetOffset_.z) + (targetVelocity.z * kVelocityBias);
+	//if (abs(targetVelocity.x) > 0.1f) {
+		camera_->translation_.z = desired.z - abs(targetVelocity.x) * kVelocityBias ;
+	//}
+	//else {
+	//	camera_->translation_.z = desired.z;
+	//}
+
+	camera_->translation_.z = Lerp(camera_->translation_.z, targetWorldTransform.translation_.z, kInterpolationRate);
 
 	// clamp
 	camera_->translation_.x = std::clamp(camera_->translation_.x, moveableArea_.left, moveableArea_.right);
