@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <algorithm>
 #include <numbers>
+#include <array>
 
 using namespace KamataEngine;
 
@@ -42,6 +43,7 @@ public:
 	};
 
 	enum class AttackPhase {
+		kAim,
 		kCoil,
 		kRush,
 		kLinger,
@@ -83,20 +85,16 @@ public:
 
 	Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
 
-	Vector3 acceleration_ = { 0.0f, kGravityAcceleration, 0.0f };
+	//Vector3 acceleration_ = { 0.0f, kGravityAcceleration, 0.0f };
 
 	Behavior behavior_ = Behavior::kRoot;
-
 	Behavior behaviorRequest_ = Behavior::kUnknown;
-
 	AttackPhase attackPhase_ = AttackPhase::kCoil;
 
 	const KamataEngine::WorldTransform& GetTransform() const { return playerTransform_; }
-
 	const KamataEngine::Vector3& GetVelocity() const { return velocity_; }
 
 	bool IsDead() const { return isDead_; }
-
 	bool IsAttack() const { return isAttack_; }
 
 private:
@@ -109,65 +107,55 @@ private:
 	ObjectColor objectColor_;          
 	Vector4 normalColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Vector4 attackColor_ = { 1.0f, 0.15f, 0.15f, 1.0f };   // bright red
+	Vector4 aimColor_ = { 0.3f, 1.0f, 1.0f, 1.0f };
 
 	Camera* camera_ = nullptr;
-
 	MapChip* mapChipField_ = nullptr;
 
-	static inline const float kAttenuation = 0.05f;
+	static inline const float kAttenuation			= 0.05f;
+	static inline const float kAttenuationLanding	= 0.003f;
+	static inline const float kLimitRunSpeed		= 3.0f;
+	static inline const float kLimitFallSpeed		= 0.2f;
+	static inline const float kAcceleration			= 0.009f;
+	static inline const float kJumpAcceleration		= 0.95f;
+	static inline const float kGravityAcceleration	= 0.1f;
+	static inline const float kSlopeSlideForce		= 0.0045f;
+	static inline const float kSlopeMaxSlide		= 0.09f;
 
-	static inline const float kAttenuationLanding = 0.003f;
-
-	static inline const float kLimitRunSpeed = 3.0f;
-
-	static inline const float kLimitFallSpeed = 0.2f;
-
-	static inline const float kAcceleration = 0.009f;
-
-	static inline const float kJumpAcceleration = 0.95f;
-
-	static inline const float kGravityAcceleration = 0.1f;
-
-	static inline const float kWidth = 0.8f;
-
-	static inline const float kHeight = 0.8f;
-
-	static inline const float kBlank = { 0.01f }; //numerical value
+	static inline const float kWidth	= 0.8f;
+	static inline const float kHeight	= 0.8f;
+	static inline const float kBlank	= { 0.01f }; //numerical value
 
 	static inline const float kTimeTurn = 0.25f;
-
 	float turnFirstRotationY_ = 0.0f;
-
 	float turnTimer_ = 0.0f;
 
 	//------- Attack -----------------------------
+	
 	uint32_t attackParameter_ = 0;
+	float coilDuration_		= 1.0f;
+	float rushDuration_		= 15.0f;
+	float lingerDuration_	= 2.0f;
+	float chargePower_		= 0.0f;
+	float attackVelocity_	= 0.65f;
 
-	float coilDuration_ = 1.0f;
+	const float attackOffset = 0.1f; // tweak to taste
 
-	float rushDuration_ = 4.0f;
-
-	float attackVelocity = 1.0f;
-
-	float lingerDuration_ = 2.0f;
-
-	float timer = 0.0f;
-
-	float attackTime_ = 10.0f;
-
-	const float attackOffset = 0.4f; // tweak to taste
+	float frameCount = 0.0f;
+	//float attackTime_ = 10.0f;
 
 	//---------------------------------------------
 
 	bool onGround_ = false;
-
 	bool onSlope_ = false;
-
 	bool canDash_ = false;
-
+	bool canAirDash_ = false;
 	bool isAttack_ = false;
-
 	bool isDead_ = false;
+	bool isAiming_ = false;
 
+	float aimAngle_ = 0.0f;
+	Vector3 aimDirection_{ 1.0f, 0.0f, 0.0f };
+	static inline const float kArrowLength = 2.8f;
 };
 

@@ -35,6 +35,10 @@ Vector3 Add(const Vector3& v1, const Vector3& v2) {
 	return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 }
 
+Vector3 AddFloat(const Vector3& v, float f) {
+	return {v.x + f, v.y + f, v.z + f};
+}
+
 Vector3 Subtract(const Vector3& v1, const Vector3& v2) {
 	return { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 }

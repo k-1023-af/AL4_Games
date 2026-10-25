@@ -56,7 +56,9 @@ float Lerp(float start, float end, float t);
 float EaseOut(float start, float end, float t);
 float EaseIn(float start, float end, float t);
 
+
 Vector3 Add(const Vector3& v1, const Vector3& v2);
+Vector3 AddFloat(const Vector3& v, float f);
 Vector3 Subtract(const Vector3& v1, const Vector3& v2);
 Vector3 MultiplyByS(const Vector3& v, float scalar);
 Vector3 Multiply2Vectors(const Vector3& v1, const Vector3& v2);

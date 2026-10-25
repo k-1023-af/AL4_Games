@@ -42,7 +42,8 @@ public:
 
 	//bool IsSlopeWallLeft(MapChipType type) const { return type == MapChipType::kSlope1L; }
 	//bool IsSlopeWallRight(MapChipType type) const { return type == MapChipType::kSlope1R; }
-	bool isHalfSlopeWall(MapChipType type) const { return type == MapChipType::kSlope2L || type == MapChipType::kSlope2R/* ||
+	bool isHalfSlopeWall(MapChipType type) const { 
+		return type == MapChipType::kSlope2L || type == MapChipType::kSlope2R/* ||
 		type == MapChipType::kSlope3L || type == MapChipType::kSlope3R*/;
 	}
 	bool IsInBottomHalf(uint32_t xIndex, uint32_t yIndex, float posY);

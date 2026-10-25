@@ -52,6 +52,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		}
 		else if (current == SceneId::Game) {
+			if (Input::GetInstance()->TriggerKey(DIK_R)) {
+				gameScene->IsFinished();
+				current = SceneId::Title;
+			}
+
 			gameScene->Update();
 
 			if (gameScene->IsFinished()) {
