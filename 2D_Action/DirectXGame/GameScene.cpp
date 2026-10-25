@@ -231,6 +231,7 @@ void GameScene::Update() {
 	case Phase::kPlay:
 		player_->Update();
 		targetCamera_->Update();
+		targetCamera_->SetPSpeed(player_->IsPSpeed());
 	 
 		for (size_t i = 0; i < worldTransformBlocks_.size(); ++i) {
 		std::vector<WorldTransform*>& worldTransformBlockLine = worldTransformBlocks_[i];

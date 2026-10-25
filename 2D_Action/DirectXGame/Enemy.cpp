@@ -106,6 +106,7 @@ void Enemy::MapCollision() {
 	if (type == MapChipType::kBlock || type == MapChipType::kSlope1L || type == MapChipType::kSlope1R) {
 		float surfaceY = (type == MapChipType::kBlock)
 			? mapChipField_->GetRectByIndex(index.xIndex, index.yIndex).top
+			//: mapChipField_->GetSurfaceY(index.xIndex, index.yIndex, enemyTransform_.translation_.x);
 			: mapChipField_->GetSlopeSurfaceY(index.xIndex, index.yIndex, enemyTransform_.translation_.x);
 		float bottom = enemyTransform_.translation_.y - kHeight * 0.5f;
 		if (bottom <= surfaceY + blank) {

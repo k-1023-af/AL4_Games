@@ -22,9 +22,13 @@ void CameraController::Update() {
 	};
 	//desired.x += targetVelocity.x * (kVelocityBias * 3);
 
+	float lookAheadMin = isPSpeed_ ? kPLookAheadMin : kLookAheadMin;
+	float lookAheadPer = isPSpeed_ ? kPLookAheadPerSpeed : kLookAheadPerSpeed;
+	float lookAheadMax = isPSpeed_ ? kPLookAheadMax : kLookAheadMax;
+
 	float speedX = std::abs(targetVelocity.x);
-	float lookAhead = kLookAheadMin + speedX * kLookAheadPerSpeed;
-	lookAhead = std::clamp(lookAhead, kLookAheadMin, kLookAheadMax);
+	float lookAhead = lookAheadMin + speedX * lookAheadPer;
+	lookAhead = std::clamp(lookAhead, lookAheadMin, lookAheadMax);
 
 	if (targetVelocity.x > 0.1f) {			//looking right
 		desired.x += lookAhead;

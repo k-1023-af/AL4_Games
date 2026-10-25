@@ -3,9 +3,6 @@
 Model* Particles::model_ = nullptr;
 Camera* Particles::camera_ = nullptr;
 
-//Particles::Particles() = default;
-//Particles::~Particles() = default;
-
 Particles* Particles::Create(const Vector3& position, const ParticleConfig& config) {
 	Particles* e = new Particles();
 	e->Initialize(position, config);

@@ -240,6 +240,102 @@ void Player::MapCollisionX(CollisionMapInfo& info) {
 
 		if (CheckRight(kRightBottom) || CheckRight(kRightTop)) return;
 	}
+
+	//if (!mapChipField_) return;
+	//
+	//Vector3 prevCenter = {
+	//	playerTransform_.translation_.x - velocity_.x,
+	//	playerTransform_.translation_.y,
+	//	playerTransform_.translation_.z
+	//};
+	//
+	//std::array<Vector3, 4> positionOld;
+	//std::array<Vector3, 4> positionNew;
+	//for (uint32_t i = 0; i < 4; ++i) {
+	//	positionOld[i] = GetCornerPosition(prevCenter, static_cast<Corner>(i));
+	//	positionNew[i] = GetCornerPosition(playerTransform_.translation_, static_cast<Corner>(i));
+	//}
+	//
+	//info.wallFlagL = false;
+	//info.wallFlagR = false;
+	//
+	////------------------------------------------------------------
+	//// Moving LEFT
+	////------------------------------------------------------------
+	//if (info.move.x <= 0.0f) {
+	//
+	//	auto CheckLeft = [&](Corner corner) -> bool {
+	//		MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionOld[corner]);
+	//		MapChipType cur = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+	//		MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex - 1, idx.yIndex);
+	//
+	//		// classic block wall
+	//		bool blockWall = (cur != MapChipType::kBlock && next == MapChipType::kBlock);
+	//		bool slopeWall = false;
+	//
+	//		if (next == MapChipType::kSlope1R || next == MapChipType::kSlope2R) {
+	//			slopeWall = true;
+	//		}
+	//		if (next == MapChipType::kSlope3R || next == MapChipType::kSlope2L ||
+	//			(lrDirection_ == LRDirection::kLeft && next == MapChipType::kSlope3R) ||
+	//			(lrDirection_ == LRDirection::kLeft && next == MapChipType::kSlope2L)) {
+	//			float checkY = positionNew[corner].y;
+	//			slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex - 1, idx.yIndex, checkY);
+	//		}
+	//
+	//		if (!blockWall && !slopeWall) return false;
+	//
+	//		MapChip::IndexSet now = mapChipField_->GetMapChipIndexSetByPosition(positionNew[corner]);
+	//		if (now.xIndex == idx.xIndex) return false;   // still in same cell
+	//
+	//		MapChip::Rect rect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+	//		playerTransform_.translation_.x = rect.left + (kWidth * 0.5f) + kBlank;
+	//		info.wallFlagL = true;
+	//		return true;
+	//		};
+	//
+	//	if (CheckLeft(kLeftBottom) || CheckLeft(kLeftTop))
+	//		return;
+	//}
+	//
+	////------------------------------------------------------------
+	//// Moving RIGHT
+	////------------------------------------------------------------
+	//if (info.move.x >= 0.0f) {
+	//
+	//	auto CheckRight = [&](Corner corner) {
+	//		MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionOld[corner]);
+	//		MapChipType cur = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+	//		MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex + 1, idx.yIndex);
+	//
+	//		bool blockWall = (cur != MapChipType::kBlock && next == MapChipType::kBlock);
+	//		bool slopeWall = false;
+	//
+	//		if (next == MapChipType::kSlope1L || next == MapChipType::kSlope2L) {
+	//			slopeWall = true;
+	//		}
+	//		if (next == MapChipType::kSlope3L || next == MapChipType::kSlope2R ||
+	//			(lrDirection_ == LRDirection::kRight && next == MapChipType::kSlope3L) ||
+	//			(lrDirection_ == LRDirection::kRight && next == MapChipType::kSlope2R)) {
+	//			float checkY = positionNew[corner].y;
+	//			slopeWall = mapChipField_->IsInBottomHalf(idx.xIndex + 1, idx.yIndex, checkY);
+	//		}
+	//
+	//		if (!blockWall && !slopeWall) return false;
+	//
+	//		MapChip::IndexSet now = mapChipField_->GetMapChipIndexSetByPosition(positionNew[corner]);
+	//		if (now.xIndex == idx.xIndex) return false;
+	//
+	//		MapChip::Rect rect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+	//		playerTransform_.translation_.x = rect.right - (kWidth * 0.5f) - kBlank;
+	//		info.wallFlagR = true;
+	//		return true;
+	//		};
+	//
+	//	if (CheckRight(kRightBottom) || CheckRight(kRightTop)) return;
+	//}
+
+
 }
 
 void Player::MapCollisionY(CollisionMapInfo& info) {
@@ -329,28 +425,22 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 	// Landing Flag Check
 
 	if (info.move.y <= 0.0f) {
-		//MapChip::IndexSet indexSet;
-		//MapChipType mapChipType;
-		//MapChipType mapChipTypeNext;
-		//bool hitBlock = false;
-		//bool hitSlopeL = false;
-		//bool hitSlopeR = false;
-		//float highestSurfaceY = -100000.0f;
-		//float surfaceY = -100000.0f;
-
 		float highestSurfaceY = -100000.0f;
 		bool foundSurface = false;
 		
 		float fallSpeed = std::abs(velocity_.y);
 		const float kBaseTolerance = 0.20f;
-		const float kSpeedTolerance = 0.55f;	// high speed
+		const float kSpeedTolerance = 0.45f;	// high speed
 		float snapTolerance = kBaseTolerance + fallSpeed * kSpeedTolerance;
 		snapTolerance = (std::min)(snapTolerance, 0.85f);	
+		if (behavior_ == Behavior::kAttack) {
+			snapTolerance *= 2.0f;               // or even 2.0f
+		}
 
 		auto ConsiderSurface = [&](float surfaceY) {
 			if (surfaceY < -9999.0f) return;
 
-			float playerBottom = playerTransform_.translation_.y - (kHeight * 0.5f);
+			float playerBottom = playerTransform_.translation_.y - (kHeight * 0.4f);
 
 			// Accept the surface if we are below it or only slightly above it
 			if (playerBottom <= surfaceY + kBlank + 0.02f &&
@@ -364,49 +454,6 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 			}
 		};
 
-		///// left side
-		//indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftBottom]);
-		//mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		//mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex - 1);
-		//if (mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) {
-		//	MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-		//	highestSurfaceY = (std::max)(highestSurfaceY, rect.top);
-		//	hitBlock = true;
-		//}
-		//if ((mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) || 
-		//	(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
-		//	(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
-		//	(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
-		//	(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
-		//	(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R) ){
-		//	surfaceY = mapChipField_->GetSlopeSurfaceY(
-		//		indexSet.xIndex,
-		//		indexSet.yIndex,
-		//		playerTransform_.translation_.x
-		//	);
-		//	if (surfaceY > highestSurfaceY) {
-		//		highestSurfaceY = surfaceY;
-		//		hitSlopeL = true;
-		//
-		//		if (mapChipType == MapChipType::kSlope1L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope1R) info.onSlopeR = true;
-		//		if (mapChipType == MapChipType::kSlope2L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope2R) info.onSlopeR = true;
-		//		if (mapChipType == MapChipType::kSlope3L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope3R) info.onSlopeR = true;
-		//	}
-		//}
-		//
-		//if (hitBlock || hitSlopeL) {
-		//	float playerBottom = playerTransform_.translation_.y - (kHeight / 2.0f);
-		//	if (playerBottom <= highestSurfaceY + kBlank) {
-		//		playerTransform_.translation_.y = highestSurfaceY + (kHeight / 2.0f) + kBlank;
-		//		info.landingFlag = true;
-		//		velocity_.y = 0.0f;
-		//		onGround_ = true;
-		//		return;
-		//	}
-		//}
 		// Left foot
 		{
 			MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftBottom]);
@@ -429,7 +476,6 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 		}
 
 		/// right side
-
 		{
 			MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightBottom]);
 			MapChipType type = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
@@ -451,73 +497,187 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 		}
 
 		if (foundSurface) {
+			if (info.onSlopeL || info.onSlopeR) {
+				velocity_.x *= 0.98f;
+			}
 			playerTransform_.translation_.y = highestSurfaceY + (kHeight * 0.5f) + kBlank;
 			info.landingFlag = true;
 			velocity_.y = 0.0f;
 			onGround_ = true;
-			//canDash_ = true;
-			//canAirDash_ = true;
 			return;
 		}
 
 		if (velocity_.y < -0.01f) onGround_ = false;
-
-		//hitBlock = false;
-		//indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightBottom]);
-		//mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		//mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex - 1);
-		//if (mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) {
-		//	MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
-		//	highestSurfaceY = (std::max)(highestSurfaceY, rect.top);
-		//	hitBlock = true;
-		//}
-		//if ((mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) ||
-		//	(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
-		//	(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
-		//	(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
-		//	(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
-		//	(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R) ){
-		//	hitSlopeR = true;
-		//	surfaceY = mapChipField_->GetSlopeSurfaceY(
-		//		indexSet.xIndex,
-		//		indexSet.yIndex,
-		//		playerTransform_.translation_.x
-		//	);
-		//	if (surfaceY > highestSurfaceY) {
-		//		highestSurfaceY = surfaceY;
-		//		hitSlopeR = true;
-		//
-		//		if (mapChipType == MapChipType::kSlope1L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope1R) info.onSlopeR = true;
-		//		if (mapChipType == MapChipType::kSlope2L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope2R) info.onSlopeR = true;
-		//		if (mapChipType == MapChipType::kSlope3L) info.onSlopeL = true;
-		//		if (mapChipType == MapChipType::kSlope3R) info.onSlopeR = true;
-		//	}
-		//}
-		//
-		//if (hitBlock || hitSlopeR) {
-		//	float playerBottom = playerTransform_.translation_.y - (kHeight / 2.0f);
-		//
-		//	if (playerBottom <= highestSurfaceY + kBlank) {
-		//		playerTransform_.translation_.y = highestSurfaceY + (kHeight / 2.0f) + kBlank;
-		//		info.landingFlag = true;
-		//		velocity_.y = 0.0f;
-		//		onGround_ = true;
-		//		return;
-		//	}
-		//}
-		//if (velocity_.y < -0.01f) {   // falling
-		//	onGround_ = false;
-		//}
-		//
-		//else {
-		//	info.landingFlag = false;
-		//	info.onSlopeL = false;
-		//	info.onSlopeR = false;
-		//	return;
-		//}
 	}
+
+//if (!mapChipField_) return;
+//
+//std::array<Vector3, 4> positionOld;
+//std::array<Vector3, 4> positionNew;
+//
+//Vector3 prevPosition = {
+//	playerTransform_.translation_.x,
+//	playerTransform_.translation_.y - velocity_.y,
+//	playerTransform_.translation_.z
+//};
+//
+//for (uint32_t i = 0; i < 4; ++i) {
+//	positionNew[i] = GetCornerPosition(playerTransform_.translation_, static_cast<Corner>(i));
+//	positionOld[i] = GetCornerPosition(prevPosition, static_cast<Corner>(i));
+//}
+//
+//info.ceilingFlag = false;
+//info.landingFlag = false;
+//info.onSlopeL = false;
+//info.onSlopeR = false;
+//
+//if (info.move.y > 0.0f) {		// Ceiling check
+//	MapChip::IndexSet indexSet;
+//	MapChipType mapChipType;
+//	MapChipType mapChipTypeNext;
+//	bool hit = false;
+//
+//	/// left side
+//	indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftTop]);
+//	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
+//	mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex + 1);
+//	if ((mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) ||
+//		(mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) ||
+//		(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
+//		(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
+//		(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
+//		(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
+//		(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R)) {
+//		hit = true;
+//	}
+//	if (hit) {
+//		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftTop]);
+//		MapChip::IndexSet indexSetNow;
+//		indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kLeftTop]);
+//		if (indexSetNow.yIndex != indexSet.yIndex) {
+//			MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
+//			playerTransform_.translation_.y = rect.bottom - (kHeight / 2.0f) - kBlank;
+//			info.ceilingFlag = true;
+//			return;
+//		}
+//	}
+//	/// right side
+//	hit = false;
+//	indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightTop]);
+//	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
+//	mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex + 1);
+//	if ((mapChipType == MapChipType::kBlock && mapChipTypeNext != MapChipType::kBlock) ||
+//		(mapChipType == MapChipType::kSlope1L && mapChipTypeNext != MapChipType::kSlope1L) ||
+//		(mapChipType == MapChipType::kSlope1R && mapChipTypeNext != MapChipType::kSlope1R) ||
+//		(mapChipType == MapChipType::kSlope2L && mapChipTypeNext != MapChipType::kSlope2L) ||
+//		(mapChipType == MapChipType::kSlope2R && mapChipTypeNext != MapChipType::kSlope2R) ||
+//		(mapChipType == MapChipType::kSlope3L && mapChipTypeNext != MapChipType::kSlope3L) ||
+//		(mapChipType == MapChipType::kSlope3R && mapChipTypeNext != MapChipType::kSlope3R)) {
+//		hit = true;
+//	}
+//	if (hit) {
+//		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightTop]);
+//		MapChip::IndexSet indexSetNow;
+//		indexSetNow = mapChipField_->GetMapChipIndexSetByPosition(positionOld[kRightTop]);
+//		if (indexSetNow.yIndex != indexSet.yIndex) {
+//			MapChip::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
+//			playerTransform_.translation_.y = rect.bottom - (kHeight / 2.0f) - kBlank;
+//			info.ceilingFlag = true;
+//			return;
+//		}
+//	}
+//	else {
+//		info.ceilingFlag = false;
+//		return;
+//	}
+//}
+//
+////--------------------------------------------
+//// Landing Flag Check
+//
+//if (info.move.y <= 0.0f) {
+//	float highestSurfaceY = -100000.0f;
+//	bool foundSurface = false;
+//
+//	float fallSpeed = std::abs(velocity_.y);
+//	const float kBaseTolerance = 0.20f;
+//	const float kSpeedTolerance = 0.55f;	// high speed
+//	float snapTolerance = kBaseTolerance + fallSpeed * kSpeedTolerance;
+//	snapTolerance = (std::min)(snapTolerance, 0.85f);
+//
+//	auto ConsiderSurface = [&](float surfaceY) {
+//		if (surfaceY < -9999.0f) return;
+//
+//		float playerBottom = playerTransform_.translation_.y - (kHeight * 0.4f);
+//
+//		// Accept the surface if we are below it or only slightly above it
+//		if (playerBottom <= surfaceY + kBlank + 0.02f &&
+//			playerBottom >= surfaceY - snapTolerance)
+//		{
+//			if (surfaceY > highestSurfaceY)
+//			{
+//				highestSurfaceY = surfaceY;
+//				foundSurface = true;
+//			}
+//		}
+//		};
+//
+//	// Left foot
+//	{
+//		MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kLeftBottom]);
+//		MapChipType type = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+//		MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex - 1);
+//
+//		if (type == MapChipType::kBlock && next != MapChipType::kBlock) {
+//			ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top);
+//		}
+//		else if (type == MapChipType::kSlope1L || type == MapChipType::kSlope1R ||
+//			type == MapChipType::kSlope2L || type == MapChipType::kSlope2R ||
+//			type == MapChipType::kSlope3L || type == MapChipType::kSlope3R) {
+//			float sy = mapChipField_->GetSurfaceY(idx.xIndex, idx.yIndex, playerTransform_.translation_.x);
+//			ConsiderSurface(sy);
+//			if (type == MapChipType::kSlope1L || type == MapChipType::kSlope2L || type == MapChipType::kSlope3L)
+//				info.onSlopeL = true;
+//			else
+//				info.onSlopeR = true;
+//		}
+//	}
+//
+//	/// right side
+//	{
+//		MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(positionNew[kRightBottom]);
+//		MapChipType type = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
+//		MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex - 1);
+//
+//		if (type == MapChipType::kBlock && next != MapChipType::kBlock) {
+//			ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top);
+//		}
+//		else if (type == MapChipType::kSlope1L || type == MapChipType::kSlope1R ||
+//			type == MapChipType::kSlope2L || type == MapChipType::kSlope2R ||
+//			type == MapChipType::kSlope3L || type == MapChipType::kSlope3R) {
+//			float sy = mapChipField_->GetSurfaceY(idx.xIndex, idx.yIndex, playerTransform_.translation_.x);
+//			ConsiderSurface(sy);
+//			if (type == MapChipType::kSlope1L || type == MapChipType::kSlope2L || type == MapChipType::kSlope3L)
+//				info.onSlopeL = true;
+//			else
+//				info.onSlopeR = true;
+//		}
+//	}
+//
+//	if (foundSurface) {
+//		if (info.onSlopeL || info.onSlopeR) {
+//			velocity_.x *= 0.98f;
+//		}
+//		playerTransform_.translation_.y = highestSurfaceY + (kHeight * 0.5f) + kBlank;
+//		info.landingFlag = true;
+//		velocity_.y = 0.0f;
+//		onGround_ = true;
+//		return;
+//	}
+//
+//	if (velocity_.y < -0.01f) onGround_ = false;
+//}
+
 }
 
 void Player::EnemyCollision(Enemy* enemy) {
@@ -554,11 +714,15 @@ void Player::BehaviorUpdate() {
 		//canAirDash_ = true;
 		velocity_.x *= (1.0f - kAttenuationLanding);
 	}
-	////-----------------------////
-	//	  [1] movement input	 //
-	////-----------------------////
+	//===========================================================
+	//	  [1] movement input	 
+	//============================================================
+
+	float speedLimit = isPSpeed_ ? kLimitPSpeed : kLimitRunSpeed;
+	float accel		 = isPSpeed_ ? kRunAcceleration : kAcceleration;
+
 	if (Input::GetInstance()->PushKey(DIK_D)) {
-		velocity_.x += kAcceleration;
+		velocity_.x += accel;
 		if (lrDirection_ != LRDirection::kRight) {
 			lrDirection_ = LRDirection::kRight;
 			turnFirstRotationY_ = playerTransform_.rotation_.y;
@@ -566,7 +730,7 @@ void Player::BehaviorUpdate() {
 		}
 	}
 	if (Input::GetInstance()->PushKey(DIK_A)) {
-		velocity_.x -= kAcceleration;
+		velocity_.x -= accel;
 		if (lrDirection_ != LRDirection::kLeft) {
 			lrDirection_ = LRDirection::kLeft;
 			turnFirstRotationY_ = playerTransform_.rotation_.y;
@@ -574,8 +738,69 @@ void Player::BehaviorUpdate() {
 		}
 	}
 
-	// jump
-	if (onGround_) {
+	// clamp
+	velocity_.x = std::clamp(velocity_.x, -speedLimit, speedLimit);
+
+	if (isPSpeed_ && onGround_) {
+		// One extra ground sample at high speed
+		MapCollisionY(info);
+		if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
+			onGround_ = true;
+			velocity_.y = 0.0f;
+		}
+	}
+
+	//================================================================
+	// P Speed
+	//================================================================
+	bool atFullRunSpeed = (!info.wallFlagL || !info.wallFlagR) && std::abs(velocity_.x) >= (kLimitRunSpeed * 0.90f);
+	if (atFullRunSpeed) {
+		pMeter_ = (std::min)(1.0f, pMeter_ + kPMeterFillRate);
+	}
+	else {
+		float drain = (!info.wallFlagL || !info.wallFlagR) && (std::abs(velocity_.x) > 0.5f) ? kPMeterDrainRate * 0.6f : kPMeterDrainRate;
+		pMeter_ = (std::max)(0.0f, pMeter_ - drain);
+	}
+
+	if (pMeter_ >= kPSpeedThreshold) {
+		isPSpeed_ = true;
+		pSpeedTimer_ = kPSpeedDuration;
+	}
+	else if (isPSpeed_) {
+		pSpeedTimer_ -= 1.0f;
+		if (pSpeedTimer_ <= 0.0f) {
+			isPSpeed_ = false;
+			pMeter_ = 0.4f;
+		}
+	}
+
+	float t = std::clamp(pMeter_, 0.0f, 1.0f);
+	Vector4 currentColor = {
+		Lerp(normalColor_.x, pSpeedColor_.x, t), 
+		Lerp(normalColor_.y, pSpeedColor_.y, t),
+		Lerp(normalColor_.z, pSpeedColor_.z, t),
+		1.0f
+	};
+
+	if (isPSpeed_) {
+		float pulse = 0.82f + 0.18f * std::sin(pSpeedTimer_ * 0.25f);
+		currentColor = {
+			pSpeedColor_.x * pulse,
+			pSpeedColor_.y * pulse,
+			pSpeedColor_.z * pulse,
+			1.0f
+		};
+	}
+
+	objectColor_.SetColor(currentColor);
+
+	//===============================================================================
+	// Jump
+	//==============================================================================
+	if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
+		onGround_ = true;
+	}
+	if (onGround_ || info.onSlopeL || info.onSlopeR) {
 		canAirDash_ = false;
 		frameCount = 0.0f;
 		if (Input::GetInstance()->TriggerKey(DIK_B)) {
@@ -585,19 +810,23 @@ void Player::BehaviorUpdate() {
 			frameCount = 0.0f;
 		}
 	}
-	if (!onGround_ && behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_B)) {
-		frameCount++;
-		if (frameCount >= 4.0f) {
-			canAirDash_ = true;
+	else {
+		if (behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_B)) {
+			frameCount++;
+			if (frameCount >= 2.0f) {
+				canAirDash_ = isPSpeed_;
+			}
 		}
 	}
-	if (canAirDash_) {
+	
+	if (canAirDash_ && canDash_) {
 		if (Input::GetInstance()->PushKey(DIK_B)) {
 			//start aiming
 			behaviorRequest_ = Behavior::kAttack;
 			attackPhase_ = AttackPhase::kAim;
 			isAiming_ = true;
 			canAirDash_ = false;
+			canDash_ = false;
 			isAttack_ = true;
 			frameCount = 0.0f;
 			aimDirection_ = (lrDirection_ == LRDirection::kRight)
@@ -614,92 +843,17 @@ void Player::BehaviorUpdate() {
 		if (velocity_.x != 0) velocity_.x *= (1.0f - kAttenuation);
 	}
 
-
-	//// ----- Slope sliding -----
-	//if (onGround_ && mapChipField_)
-	//{
-	//	MapChip::IndexSet idx = mapChipField_->GetMapChipIndexSetByPosition(playerTransform_.translation_);
-	//	MapChipType type = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
-
-	//	float slopeDir = 0.0f;		// +1 = downhill is right, -1 = downhill is left
-
-	//	switch (type)
-	//	{
-	//	case MapChipType::kSlope1L:
-	//	case MapChipType::kSlope2L:
-	//	case MapChipType::kSlope3L:
-	//		slopeDir = +1.0f;
-	//		break;
-
-	//	case MapChipType::kSlope1R:
-	//	case MapChipType::kSlope2R:
-	//	case MapChipType::kSlope3R:
-	//		slopeDir = -1.0f;
-	//		break;
-
-	//	default:
-	//		break;
-	//	}
-
-	//	if (slopeDir != 0.0f)
-	//	{
-	//		// 1. Normal speed-scaled slide force (from previous version)
-	//		float speedAlongSlope = velocity_.x * slopeDir;
-	//		float force = kSlopeSlideForce;
-
-	//		if (speedAlongSlope > 0.0f)
-	//			force += speedAlongSlope * 0.12f;		// downhill help
-	//		else
-	//			force += speedAlongSlope * 0.18f;		// uphill resistance
-
-	//		velocity_.x += force * slopeDir;
-
-	//		// 2. Convert some downward velocity into downhill speed
-	//		if (velocity_.y < 0.0f)		// only when falling / sliding down
-	//		{
-	//			// How much of the fall speed we turn into horizontal speed
-	//			const float conversionRate = 0.05f;		// 0.4 ~ 0.7 feels good
-
-	//			float converted = -velocity_.y * conversionRate;
-	//			velocity_.x += converted * slopeDir;
-
-	//			// Optional: reduce the remaining vertical speed a little
-	//			// so the player doesn’t keep bouncing
-	//			velocity_.y *= 0.7f;
-	//		}
-
-	//		// Safety clamp
-	//		velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed * 1.5f, kLimitRunSpeed * 1.5f);
-	//	}
-	//}
-
-	//velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
-
-	//if (turnTimer_ > 0.0f) {
-	//	turnTimer_ -= 1.0f / 60.0f; // 60 FPS
-
-	//	float destinationRotationYTable[] = {
-	//		std::numbers::pi_v<float> / 2.0f,        // kRight
-	//		std::numbers::pi_v<float> * 3.0f / 2.0f, // kLeft
-	//	};
-	//	float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
-	//	playerTransform_.rotation_.y = Lerp(turnFirstRotationY_, destinationRotationY, 8.0f - (turnTimer_ / kTimeTurn));
-	//	if (turnTimer_ <= 0.0f) playerTransform_.rotation_.y = destinationRotationY;
-	//}
-
 	////------------------------------------////
 	//	[2]collision detection with movement  //
 	////------------------------------------////
 
 	// Apply velocity then collide
-	const int vSteps = 8;
 	for (int i = 0; i < vSteps; ++i) {
 		playerTransform_.translation_.y += velocity_.y / vSteps;
 		MapCollisionY(info);
 	}
 
 	// Horizontal sub-steps
-	const int hSteps = 6;
 	for (int i = 0; i < hSteps; ++i) {
 		playerTransform_.translation_.x += velocity_.x / hSteps;
 		MapCollisionX(info);
@@ -712,10 +866,17 @@ void Player::BehaviorUpdate() {
 	if (info.landingFlag) {
 		velocity_.y = 0;
 		onGround_ = true;
-		//canDash_ = true;
+		canDash_ = true;
 		canAirDash_ = false;
 		DebugText::GetInstance()->ConsolePrintf("landing\n");
 	}
+
+	//if (!info.onSlopeL || !info.onSlopeR){
+	//	if ((info.wallFlagL || info.wallFlagR)) {
+	//		velocity_.x = 0.0f;
+	//	}
+	//}
+	
 }
 
 void Player::BehaviorAttackInitialize() {
@@ -724,6 +885,13 @@ void Player::BehaviorAttackInitialize() {
 
 void Player::BehaviorAttackUpdate() {
 	if (!modelAttack_) return;
+
+	if (!isPSpeed_) {
+		behaviorRequest_ = Behavior::kRoot;
+		isAiming_ = false;
+		isAttack_ = false;
+		return;
+	}
 
 	//objectColor_.SetColor(attackColor_);
 
@@ -745,8 +913,8 @@ void Player::BehaviorAttackUpdate() {
 	case AttackPhase::kAim:
 	{
 		objectColor_.SetColor(aimColor_);
-		chargePower_ = std::clamp(chargePower_, 0.0f, 1.0f);
-		chargePower_ += 1.0f / 30.0f;
+		chargePower_ = std::clamp(chargePower_, 0.4f, 1.0f);
+		chargePower_ += 1.0f / 60.0f;
 		// ----- Read input -----
 		float inputX = 0.0f;
 		float inputY = 0.0f;
@@ -824,20 +992,33 @@ void Player::BehaviorAttackUpdate() {
 		CollisionMapInfo info;
 		info.move = velocity_;
 
-		const int vSteps = 6;
-		for (int i = 0; i < vSteps; ++i) {
-			playerTransform_.translation_.y += velocity_.y * 0.6f;
-			MapCollisionY(info);
-		}
-		const int hSteps = 12;
+		//float incomingVelocityY = velocity_.y;
+
 		for (int i = 0; i < hSteps; ++i) {
 			playerTransform_.translation_.x += velocity_.x / hSteps;
 			MapCollisionX(info);
 		}
+		for (int i = 0; i < vSteps; ++i) {
+			playerTransform_.translation_.y += velocity_.y / vSteps;
+			MapCollisionY(info);
+			if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
+				break;   // already landed, no need to keep moving
+			}
+		}
+		
 		
 		// if we hit a wall or ceiling, kill the corresponding velocity
 		if (info.wallFlagL || info.wallFlagR) velocity_.x = 0.0f;
 		if (info.ceilingFlag)               velocity_.y = 0.0f;
+
+		if (info.onSlopeL) {
+			info.landingFlag = true;
+			velocity_.x -= velocity_.y * 0.8f;
+		}
+		if (info.onSlopeR) {
+			info.landingFlag = true;
+			velocity_.x += velocity_.y * 0.8f;
+		}
 		if (info.landingFlag) {
 			velocity_.y = 0.0f;
 			onGround_ = true;
@@ -845,6 +1026,7 @@ void Player::BehaviorAttackUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackParameter_ = 0;
 		}
+		
 
 		float t = attackParameter_ / rushDuration_;
 		playerTransform_.scale_.z = EaseOut(0.1f, 1.6f, t);
@@ -867,11 +1049,31 @@ void Player::BehaviorAttackUpdate() {
 			CollisionMapInfo info;
 			info.move = velocity_;
 
-			playerTransform_.translation_.y += velocity_.y;
-			MapCollisionY(info);
-			playerTransform_.translation_.x += velocity_.x;
-			MapCollisionX(info);
+			for (int i = 0; i < hSteps; ++i) {
+				playerTransform_.translation_.x += velocity_.x / hSteps;
+				MapCollisionX(info);
+			}
+			for (int i = 0; i < vSteps; ++i) {
+				playerTransform_.translation_.y += velocity_.y / vSteps;
+				MapCollisionY(info);
+				if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
+					break;   // already landed, no need to keep moving
+				}
+			}
+			
 
+			// if we hit a wall or ceiling, kill the corresponding velocity
+			if (info.wallFlagL || info.wallFlagR) velocity_.x = 0.0f;
+			if (info.ceilingFlag)               velocity_.y = 0.0f;
+
+			if (info.onSlopeL) {
+				info.landingFlag = true;
+				velocity_.x -= velocity_.y * 0.5f;
+			}
+			if (info.onSlopeR) {
+				info.landingFlag = true;
+				velocity_.x += velocity_.y * 0.5f;
+			}
 			if (info.landingFlag) {
 				velocity_.y = 0.0f;
 				onGround_ = true;
@@ -904,3 +1106,4 @@ Player::~Player(){
 	delete playerModel_;
 	delete modelAttack_;
 }
+

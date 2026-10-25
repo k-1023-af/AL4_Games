@@ -73,6 +73,45 @@ Vector3 MapChip::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) {
         0.0f);
 }
 
+//float MapChip::GetSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX) {
+//    MapChipType type = GetMapChipTypeByIndex(xIndex, yIndex);
+//    Rect rect = GetRectByIndex(xIndex, yIndex);
+//
+//    switch (type) {
+//    case MapChipType::kBlock:
+//        return rect.top - 0.05f;                          // flat top
+//
+//    case MapChipType::kSlope1L:{
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.top + 0.4f, rect.bottom + 0.2f, t);    // left high → right low
+//    }
+//    case MapChipType::kSlope2L:{
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.top + 0.22f, rect.bottom + 0.9f, t);    // left high → right low
+//    }
+//    case MapChipType::kSlope3L: {
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.top - 0.85f, rect.bottom + 0.2f, t);    // left high → right low
+//    }
+//    // right slopes
+//    case MapChipType::kSlope1R: {
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.bottom + 0.2f, rect.top + 0.4f, t);    // left low → right high
+//    }
+//    case MapChipType::kSlope2R: {
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.bottom + 0.9f, rect.top + 0.25f, t);    // left low → right high
+//    }
+// case MapChipType::kSlope3R: {
+//        float t = std::clamp((worldX - rect.left) / kBlockWidth_, 0.0f, 1.0f);
+//        return Lerp(rect.bottom + 0.2f, rect.top - 0.85f, t);    // left low → right high
+//    }
+//
+//    default:
+//        return -10000.0f;                         // not solid
+//    }
+//}
+
 float MapChip::GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX) {
    MapChipType type = GetMapChipTypeByIndex(xIndex, yIndex);
 	Rect rect = GetRectByIndex(xIndex, yIndex);
@@ -107,6 +146,8 @@ float MapChip::GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX) 
 		return -10000.0f;		// not a slope
 	}
 }
+
+
 
 bool MapChip::IsInBottomHalf(uint32_t xIndex, uint32_t yIndex, float posY) {
     Rect rect = GetRectByIndex(xIndex, yIndex);

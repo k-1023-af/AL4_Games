@@ -39,6 +39,7 @@ public:
 	Vector3 GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex);
 
 	float GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX);
+	//float GetSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX);
 
 	//bool IsSlopeWallLeft(MapChipType type) const { return type == MapChipType::kSlope1L; }
 	//bool IsSlopeWallRight(MapChipType type) const { return type == MapChipType::kSlope1R; }

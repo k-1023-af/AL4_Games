@@ -17,6 +17,7 @@ public:
 	
 	void SetTarget(Player* target);
 	void SetMoveableArea(MapChip* mapChipStage);
+	void SetPSpeed(bool active) { isPSpeed_ = active; }
 	void Reset();
 
 	struct Rect {
@@ -38,12 +39,12 @@ private:
 
 	//WorldUpdater* worldUpdater_;
 
+	bool isPSpeed_ = false;
+
 	Vector3 targetOffset_ = { 0.0f, 0.4f, -50.f };
 
 	static inline const float kInterpolationRate = 0.7f;
-
 	static inline const float kVelocityBias = { 5.0f };
-
 	static inline const Rect margin = { -10.0f, 10.0f, -7.0f, 7.0f };
 
 	//Vector3 Lerp
@@ -57,13 +58,18 @@ private:
 	//static inline const float kHorizontalMaxLerp = 0.55f;   // clamp so it never becomes instant
 
 	// Look ahead
-	static inline const float kLookAheadMin = 5.0f;
-	static inline const float kLookAheadPerSpeed = 3.6f;
-	static inline const float kLookAheadMax = 15.0f;
+	static inline const float kLookAheadMin			= 5.0f;
+	static inline const float kLookAheadPerSpeed	= 3.6f;
+	static inline const float kLookAheadMax			= 15.0f;
+
+	// Look ahead during P Speed
+	static inline const float kPLookAheadMin		= 9.0f;
+	static inline const float kPLookAheadPerSpeed	= 5.5;
+	static inline const float kPLookAheadMax		= 22.0f;
 
 	// Vertical dead-zone
-	static inline const float kDeadZoneHalfHeight = 3.4f;    // world units the player can move freely
-	static inline const float kVerticalSoftLerp = 0.06f;   // very gentle while inside the zone
-	static inline const float kVerticalHardLerp = 0.28f;   // stronger once outside the zone
+	static inline const float kDeadZoneHalfHeight	= 3.4f;    // world units the player can move freely
+	static inline const float kVerticalSoftLerp		= 0.06f;   // very gentle while inside the zone
+	static inline const float kVerticalHardLerp		= 0.28f;   // stronger once outside the zone
 };
 
