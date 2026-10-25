@@ -104,7 +104,8 @@ private:
 	Model* playerModel_ = nullptr;
 	Model* modelAttack_ = nullptr;
 
-	ObjectColor objectColor_;          
+	ObjectColor objectColor_;       
+	Vector4 currentColor_	= { 1.0f, 1.0f, 1.0f, 1.0f };
 	Vector4 normalColor_	= { 1.0f, 1.0f, 1.0f, 1.0f };		// white
 	Vector4 pSpeedColor_	= { 1.0f, 0.95f, 0.15f, 1.0f };		// bright yellow
 	Vector4 attackColor_	= { 1.0f, 0.15f, 0.15f, 1.0f };		// bright red
@@ -113,12 +114,13 @@ private:
 	Camera* camera_ = nullptr;
 	MapChip* mapChipField_ = nullptr;
 
-	static inline const float kAttenuation			= 0.008f;
-	static inline const float kAttenuationLanding	= 0.0025f;
+	static inline const float kAttenuation			= 0.015f;
+	static inline const float kAttenuationLanding	= 0.006f;
 	static inline const float kLimitRunSpeed		= 0.15f;
 	static inline const float kLimitFallSpeed		= 0.2f;
-	static inline const float kRunAcceleration		= 0.0025f;
-	static inline const float kAcceleration			= 0.0018f;
+	static inline const float kBoostAcceleration	= 0.003f;
+	static inline const float kRunAcceleration		= 0.00275f;
+	static inline const float kAcceleration			= 0.0025f;
 	static inline const float kJumpAcceleration		= 0.95f;
 	static inline const float kGravityAcceleration	= 0.1f;
 
@@ -127,6 +129,7 @@ private:
 	static inline const float kPMeterDrainRate	= 0.008f;
 	static inline const float kPSpeedDuration	= 180.0f;
 	static inline const float kPSpeedThreshold	= 0.98f;
+	static inline const float kBoostThreshold = kPSpeedThreshold * 2.0f;
 
 	static inline const float kWidth	= 0.8f;
 	static inline const float kHeight	= 0.8f;
@@ -140,20 +143,21 @@ private:
 	
 	uint32_t attackParameter_ = 0;
 	float coilDuration_		= 1.0f;
-	float rushDuration_		= 50.0f;
+	float rushDuration_		= 40.0f;
 	float lingerDuration_	= 2.0f;
 	float chargePower_		= 0.0f;
-	float attackVelocity_	= 0.25f;
+	float attackVelocity_	= 0.3f;
 
 	const float attackOffset	= 0.1f; // tweak to taste
-	const int vSteps			= 24;
-	const int hSteps			= 36;
+	const int vSteps			= 16;
+	const int hSteps			= 24;
 
 	float frameCount = 0.0f;
 	//float attackTime_ = 10.0f;
 
 	//---------------------------------------------
 
+	bool isBoost_		= false;
 	bool isPSpeed_		= false;
 	bool onGround_		= false;
 	bool onSlope_		= false;

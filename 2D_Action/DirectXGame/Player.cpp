@@ -80,25 +80,62 @@ void Player::Draw() {
 		modelAttack_->Draw(worldTransformAttack_, *camera_);
 	}
 
+	//if (isAiming_) {
+	//	Vector3 start = playerTransform_.translation_;
+	//	start.y += 0.3f;
+	//	Vector3 end = Add(start, MultiplyByS(aimDirection_, kArrowLength));
+	//
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(start, end, { 1.0f, 0.9f, 0.2f, 1.0f });
+	//
+	//	Vector3 side = { -aimDirection_.y, aimDirection_.x, 0.0f };
+	//	side = MultiplyByS(side, 0.35f);	//side = side * 0.35f;
+	//
+	//	Vector3 back = MultiplyByS(aimDirection_, 0.55f);
+	//	Vector3 headBase = Subtract(end, back);
+	//
+	//	Vector3 head1 = Add(headBase, side)	;
+	//	Vector3 head2 = Subtract(headBase, side);
+	//
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
+	//}
 	if (isAiming_) {
 		Vector3 start = playerTransform_.translation_;
 		start.y += 0.3f;
-		Vector3 end = Add(start, MultiplyByS(aimDirection_, kArrowLength));
 
-		PrimitiveDrawer::GetInstance()->DrawLine3d(start, end, { 1.0f, 0.9f, 0.2f, 1.0f });
+		// Full-length faint guide
+		Vector3 fullEnd = Add(start, MultiplyByS(aimDirection_, kArrowLength));
+		PrimitiveDrawer::GetInstance()->DrawLine3d(
+			start, fullEnd, { 0.4f, 0.4f, 0.4f, 0.6f });   // grey guide
 
+		// Charge fill (grows with chargePower_)
+		float chargeT = std::clamp(chargePower_, 0.0f, 1.0f);
+		Vector3 chargeEnd = Add(start, MultiplyByS(aimDirection_, kArrowLength * chargeT));
+
+		// Color goes from yellow → orange → red as it charges
+		Vector4 chargeColor = {
+			1.0f,
+			1.0f - chargeT * 0.7f,   // green channel decreases
+			0.15f,
+			1.0f
+		};
+
+		PrimitiveDrawer::GetInstance()->DrawLine3d(start, chargeEnd, chargeColor);
+
+		// Arrow head at the tip of the charge line (or full line – your choice)
 		Vector3 side = { -aimDirection_.y, aimDirection_.x, 0.0f };
-		side = MultiplyByS(side, 0.35f);	//side = side * 0.35f;
+		side = MultiplyByS(side, 0.35f);
 
 		Vector3 back = MultiplyByS(aimDirection_, 0.55f);
-		Vector3 headBase = Subtract(end, back);
+		Vector3 headBase = Subtract(chargeEnd, back);   // tip of the charged part
 
-		Vector3 head1 = Add(headBase, side)	;
+		Vector3 head1 = Add(headBase, side);
 		Vector3 head2 = Subtract(headBase, side);
 
-		PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
-		PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
+		PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head1, chargeColor);
+		PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head2, chargeColor);
 	}
+
 }
 
 Vector3 Player::GetCornerPosition(const Vector3& center, Corner corner) {
@@ -162,8 +199,8 @@ void Player::MapCollisionX(CollisionMapInfo& info) {
 		positionNew[i] = GetCornerPosition(playerTransform_.translation_, static_cast<Corner>(i));
 	}
 	
-	info.wallFlagL = false;
-	info.wallFlagR = false;
+	//info.wallFlagL = false;
+	//info.wallFlagR = false;
 	
 	//------------------------------------------------------------
 	// Moving LEFT
@@ -704,6 +741,7 @@ void Player::BehaviorUpdate() {
 	worldUpdater_.Update(playerTransform_);
 	CollisionMapInfo info;
 	info.move = velocity_;
+	objectColor_.SetColor(currentColor_);
 
 	// Floor check
 	if (playerTransform_.translation_.y <= 1.0f) {
@@ -719,7 +757,8 @@ void Player::BehaviorUpdate() {
 	//============================================================
 
 	float speedLimit = isPSpeed_ ? kLimitPSpeed : kLimitRunSpeed;
-	float accel		 = isPSpeed_ ? kRunAcceleration : kAcceleration;
+	float accel		 = isBoost_ ? kBoostAcceleration : 
+						isPSpeed_ ? kRunAcceleration : kAcceleration;
 
 	if (Input::GetInstance()->PushKey(DIK_D)) {
 		velocity_.x += accel;
@@ -753,16 +792,39 @@ void Player::BehaviorUpdate() {
 	//================================================================
 	// P Speed
 	//================================================================
-	bool atFullRunSpeed = (!info.wallFlagL || !info.wallFlagR) && std::abs(velocity_.x) >= (kLimitRunSpeed * 0.90f);
+	bool hittingWall = info.wallFlagL || info.wallFlagR;
+
+	bool atFullRunSpeed = false;
+
+	if (!hittingWall) {
+		if (lrDirection_ == LRDirection::kRight) {
+			// Running right → need high positive speed
+			atFullRunSpeed = velocity_.x >= (kLimitRunSpeed * 0.90f);
+		}
+		else if (lrDirection_ == LRDirection::kLeft) {
+			// Running left → need high negative speed
+			atFullRunSpeed = velocity_.x <= -(kLimitRunSpeed * 0.90f);
+		}
+	}
+
 	if (atFullRunSpeed) {
-		pMeter_ = (std::min)(1.0f, pMeter_ + kPMeterFillRate);
+		pMeter_ = (std::min)(2.0f, pMeter_ + kPMeterFillRate);
 	}
 	else {
-		float drain = (!info.wallFlagL || !info.wallFlagR) && (std::abs(velocity_.x) > 0.5f) ? kPMeterDrainRate * 0.6f : kPMeterDrainRate;
+		// Drain faster against walls
+		float drain = hittingWall ? kPMeterDrainRate * 2.5f
+			: (std::abs(velocity_.x) > 0.5f ? kPMeterDrainRate * 0.6f
+				: kPMeterDrainRate);
 		pMeter_ = (std::max)(0.0f, pMeter_ - drain);
 	}
 
+	if (pMeter_ >= kBoostThreshold) {
+		isBoost_ = true;
+		isPSpeed_ = true;          // Boost implies P-Speed
+		pSpeedTimer_ = kPSpeedDuration;
+	}
 	if (pMeter_ >= kPSpeedThreshold) {
+		isBoost_ = false;
 		isPSpeed_ = true;
 		pSpeedTimer_ = kPSpeedDuration;
 	}
@@ -774,25 +836,36 @@ void Player::BehaviorUpdate() {
 		}
 	}
 
-	float t = std::clamp(pMeter_, 0.0f, 1.0f);
-	Vector4 currentColor = {
-		Lerp(normalColor_.x, pSpeedColor_.x, t), 
-		Lerp(normalColor_.y, pSpeedColor_.y, t),
-		Lerp(normalColor_.z, pSpeedColor_.z, t),
-		1.0f
-	};
-
-	if (isPSpeed_) {
+	if (isBoost_) {
+		// Strong red + slight pulse
+		float pulse = 0.85f + 0.15f * std::sin(pSpeedTimer_ * 0.3f);
+		currentColor_ = { 
+			attackColor_.x * pulse,
+			attackColor_.y,
+			attackColor_.z,
+			1.0f };
+	}
+	else if (isPSpeed_) {
 		float pulse = 0.82f + 0.18f * std::sin(pSpeedTimer_ * 0.25f);
-		currentColor = {
+		currentColor_ = {
 			pSpeedColor_.x * pulse,
 			pSpeedColor_.y * pulse,
 			pSpeedColor_.z * pulse,
 			1.0f
 		};
 	}
+	else {
+		// normal → yellow lerp based on pMeter_ (0 ~ 1)
+		float t = std::clamp(pMeter_, 0.0f, 1.0f);
+		currentColor_ = {
+			Lerp(normalColor_.x, pSpeedColor_.x, t),
+			Lerp(normalColor_.y, pSpeedColor_.y, t),
+			Lerp(normalColor_.z, pSpeedColor_.z, t),
+			1.0f
+		};
+	}
 
-	objectColor_.SetColor(currentColor);
+	objectColor_.SetColor(currentColor_);
 
 	//===============================================================================
 	// Jump
@@ -806,6 +879,12 @@ void Player::BehaviorUpdate() {
 		if (Input::GetInstance()->TriggerKey(DIK_B)) {
 			DebugText::GetInstance()->ConsolePrintf("JUMP!!\n");
 			velocity_.y = kJumpAcceleration;
+			if (lrDirection_ == LRDirection::kLeft) {
+				velocity_.x -= 0.2f * accel;
+			}
+			if (lrDirection_ == LRDirection::kRight) {
+				velocity_.x += 0.2f * accel;
+			}
 			onGround_ = false;
 			frameCount = 0.0f;
 		}
@@ -913,7 +992,7 @@ void Player::BehaviorAttackUpdate() {
 	case AttackPhase::kAim:
 	{
 		objectColor_.SetColor(aimColor_);
-		chargePower_ = std::clamp(chargePower_, 0.4f, 1.0f);
+		chargePower_ = std::clamp(chargePower_, 0.5f, 1.0f);
 		chargePower_ += 1.0f / 60.0f;
 		// ----- Read input -----
 		float inputX = 0.0f;
@@ -950,6 +1029,11 @@ void Player::BehaviorAttackUpdate() {
 			// even if no key is held we still allow the dash in the last direction
 			velocity_ = MultiplyByS(aimDirection_, attackVelocity_ * chargePower_);
 
+			pMeter_ = 0.5f;
+			//isPSpeed_ = false;
+			isBoost_ = false;
+			pSpeedTimer_ = 30.0f;
+
 			attackPhase_ = AttackPhase::kCoil;
 			attackParameter_ = 0;
 			chargePower_ = 0.0f;
@@ -971,7 +1055,7 @@ void Player::BehaviorAttackUpdate() {
 		float t = attackParameter_ / coilDuration_; // coil time
 		playerTransform_.scale_.z = EaseOut(1.0f, 0.1f, t);
 		playerTransform_.scale_.y = EaseOut(1.0f, 1.6f, t);
-
+		
 		{
 			CollisionMapInfo info;
 			info.move = velocity_;
@@ -991,7 +1075,8 @@ void Player::BehaviorAttackUpdate() {
 		objectColor_.SetColor(attackColor_);
 		CollisionMapInfo info;
 		info.move = velocity_;
-
+		info.wallFlagL = false;
+		info.wallFlagR = false;
 		//float incomingVelocityY = velocity_.y;
 
 		for (int i = 0; i < hSteps; ++i) {
@@ -1002,14 +1087,11 @@ void Player::BehaviorAttackUpdate() {
 			playerTransform_.translation_.y += velocity_.y / vSteps;
 			MapCollisionY(info);
 			if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
-				break;   // already landed, no need to keep moving
 			}
 		}
 		
-		
-		// if we hit a wall or ceiling, kill the corresponding velocity
-		if (info.wallFlagL || info.wallFlagR) velocity_.x = 0.0f;
-		if (info.ceilingFlag)               velocity_.y = 0.0f;
+		if (info.wallFlagL || info.wallFlagR) velocity_.x *= -0.8f;
+		if (info.ceilingFlag)               velocity_.y *= -0.5f;
 
 		if (info.onSlopeL) {
 			info.landingFlag = true;
@@ -1019,15 +1101,15 @@ void Player::BehaviorAttackUpdate() {
 			info.landingFlag = true;
 			velocity_.x += velocity_.y * 0.8f;
 		}
-		if (info.landingFlag) {
+		if (info.landingFlag || onGround_) {
 			velocity_.y = 0.0f;
 			onGround_ = true;
+			canDash_ = true;
 			attackPhase_ = AttackPhase::kCoil;
 			behaviorRequest_ = Behavior::kRoot;
 			attackParameter_ = 0;
 		}
 		
-
 		float t = attackParameter_ / rushDuration_;
 		playerTransform_.scale_.z = EaseOut(0.1f, 1.6f, t);
 		playerTransform_.scale_.y = EaseIn(1.6f, 0.7f, t);
@@ -1045,43 +1127,42 @@ void Player::BehaviorAttackUpdate() {
 		velocity_.x *= 0.85f;
 		velocity_.y *= 0.85f;
 
-		{
-			CollisionMapInfo info;
-			info.move = velocity_;
+		CollisionMapInfo info;
+		info.move = velocity_;
+		info.wallFlagL = false;
+		info.wallFlagR = false;
 
-			for (int i = 0; i < hSteps; ++i) {
-				playerTransform_.translation_.x += velocity_.x / hSteps;
-				MapCollisionX(info);
-			}
-			for (int i = 0; i < vSteps; ++i) {
-				playerTransform_.translation_.y += velocity_.y / vSteps;
-				MapCollisionY(info);
-				if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
-					break;   // already landed, no need to keep moving
-				}
-			}
-			
-
-			// if we hit a wall or ceiling, kill the corresponding velocity
-			if (info.wallFlagL || info.wallFlagR) velocity_.x = 0.0f;
-			if (info.ceilingFlag)               velocity_.y = 0.0f;
-
-			if (info.onSlopeL) {
-				info.landingFlag = true;
-				velocity_.x -= velocity_.y * 0.5f;
-			}
-			if (info.onSlopeR) {
-				info.landingFlag = true;
-				velocity_.x += velocity_.y * 0.5f;
-			}
-			if (info.landingFlag) {
-				velocity_.y = 0.0f;
-				onGround_ = true;
-				attackPhase_ = AttackPhase::kCoil;
-				behaviorRequest_ = Behavior::kRoot;
-				attackParameter_ = 0;
+		for (int i = 0; i < hSteps; ++i) {
+			playerTransform_.translation_.x += velocity_.x / hSteps;
+			MapCollisionX(info);
+		}
+		for (int i = 0; i < vSteps; ++i) {
+			playerTransform_.translation_.y += velocity_.y / vSteps;
+			MapCollisionY(info);
+			if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
 			}
 		}
+
+		if (info.wallFlagL || info.wallFlagR) velocity_.x *= -0.5f;
+		if (info.ceilingFlag)               velocity_.y *= -0.25f;
+
+		if (info.onSlopeL) {
+			info.landingFlag = true;
+			velocity_.x -= velocity_.y * 0.5f;
+		}
+		if (info.onSlopeR) {
+			info.landingFlag = true;
+			velocity_.x += velocity_.y * 0.5f;
+		}
+		if (info.landingFlag || onGround_) {
+			velocity_.y = 0.0f;
+			onGround_ = true;
+			canDash_ = true;
+			attackPhase_ = AttackPhase::kCoil;
+			behaviorRequest_ = Behavior::kRoot;
+			attackParameter_ = 0;
+		}
+		
 
 		float t = attackParameter_ / lingerDuration_;
 		playerTransform_.scale_.z = EaseOut(1.6f, 1.0f, t);
