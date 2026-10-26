@@ -7,18 +7,47 @@ void Player::Initialize(Camera* camera, const Vector3& position) {
 	camera_ = camera;
 
 	playerTransform_.Initialize();
-	playerTransform_.scale_ = { 0.7f, 0.7f, 0.7f };
-	playerTransform_.rotation_.y = halfPi; // 180 degrees in radians
+	playerTransform_.scale_ = { 0.5f, 0.5f, 0.5f };
+	playerTransform_.rotation_.y = -halfPi; // 180 degrees in radians
 	playerTransform_.translation_ = position;
 
-	playerModel_ = Model::CreateFromOBJ("player", true);
+	headWT_.Initialize();
+	headWT_.scale_ = playerTransform_.scale_;
+	headWT_.rotation_ = playerTransform_.rotation_;
+	headWT_.translation_ = playerTransform_.translation_;
 
+	rightArmWT_.Initialize();
+	rightArmWT_.scale_ = playerTransform_.scale_;
+	rightArmWT_.rotation_ = playerTransform_.rotation_;
+	rightArmWT_.translation_ = playerTransform_.translation_;
+
+	leftArmWT_.Initialize();
+	leftArmWT_.scale_ = playerTransform_.scale_;
+	leftArmWT_.rotation_ = playerTransform_.rotation_;
+	leftArmWT_.translation_ = playerTransform_.translation_;
+
+	rightLegWT_.Initialize();
+	rightLegWT_.scale_ = playerTransform_.scale_;
+	rightLegWT_.rotation_ = playerTransform_.rotation_;
+	rightLegWT_.translation_ = playerTransform_.translation_;
+
+	leftLegWT_.Initialize();
+	leftLegWT_.scale_ = playerTransform_.scale_;
+	leftLegWT_.rotation_ = playerTransform_.rotation_;
+	leftLegWT_.translation_ = playerTransform_.translation_;
+
+	playerModel_ = Model::CreateFromOBJ("player", true);
+	headModel_ = Model::CreateFromOBJ("playerHead", true);
+	rightArmModel_ = Model::CreateFromOBJ("rightArm", true);
+	leftArmModel_ = Model::CreateFromOBJ("leftArm", true);
+	rightLegModel_ = Model::CreateFromOBJ("rightLeg", true);
+	leftLegModel_ = Model::CreateFromOBJ("leftLeg", true);
 
 	// modelAttack_
 	//-----------------------------
 	modelAttack_ = Model::CreateFromOBJ("DashAttack", true);
 	worldTransformAttack_.Initialize();
-	worldTransformAttack_.scale_ = { 1.0f, 0.6f, 1.0f };
+	worldTransformAttack_.scale_ = { 0.8f, 0.6f, 0.8f };
 	worldTransformAttack_.rotation_.z = std::numbers::pi_v<float>;
 
 	objectColor_.Initialize();
@@ -37,6 +66,7 @@ void Player::Initialize(Camera* camera, const Vector3& position) {
 }
 
 void Player::Update() {
+
 	if (behaviorRequest_ != Behavior::kUnknown) {
 		behavior_ = behaviorRequest_;
 		//behaviorRequest_ = Behavior::kUnknown;
@@ -69,36 +99,111 @@ void Player::Draw() {
 
 	playerTransform_.TransferMatrix();
 	playerModel_->Draw(playerTransform_, *camera_, &objectColor_);
+	//headModel_->Draw(playerTransform_, *camera_, &objectColor_);
+
+	//auto DrawPart = [&](Model* model, WorldTransform& wt,
+	//	const Vector3& localOffset, float localRotZ)
+	//	{
+	//		wt.scale_ = playerTransform_.scale_;
+	//		wt.rotation_ = playerTransform_.rotation_;
+	//		wt.translation_ = playerTransform_.translation_;
+	//
+	//		// Apply local offset in the character's local space
+	//		// (This is the key fix)
+	//		Matrix4x4 rotY = MakeRotatedY(playerTransform_.rotation_.y);
+	//		Vector3 offset = Transform(localOffset, rotY);   // rotate the offset
+	//		wt.translation_ = {
+	//			wt.translation_.x + offset.x,
+	//			wt.translation_.y + offset.y,
+	//			wt.translation_.z + offset.z,
+	//		};
+	//
+	//		// Add the running swing on Z (local)
+	//		wt.rotation_.z += localRotZ;
+	//
+	//		wt.TransferMatrix();
+	//		model->Draw(wt, *camera_, &objectColor_);
+	//	};
+	//
+	//// ===== Head =====
+	////DrawPart(headModel_, headWT_, { 0.0f, 0.38f, 0.0f }, 0.0f);
+	//
+	//// ===== Arms =====
+	//DrawPart(rightArmModel_, rightArmWT_, { 0.2f, 0.2f, 0.0f }, armAngle);
+	//DrawPart(leftArmModel_, leftArmWT_, { -0.2f, 0.2f, 0.0f }, armAngleOpp);
+	//
+	//// ===== Legs =====
+	//DrawPart(rightLegModel_, rightLegWT_, { 0.12f, -0.3f, 0.0f }, legAngle);
+	//DrawPart(leftLegModel_, leftLegWT_, { -0.12f, -0.3f, 0.0f }, legAngleOpp);
+
+	//=================================================================
+	//	Draw Running Animation
+	//=================================================================
+
+	headWT_.scale_ = playerTransform_.scale_;
+	headWT_.rotation_ = playerTransform_.rotation_;
+	headWT_.translation_ = playerTransform_.translation_;
+	headWT_.translation_.y += 0.0f;               // adjust to your model
+	headWT_.TransferMatrix();
+	headModel_->Draw(headWT_, *camera_, &objectColor_);
+	
+	rightArmWT_.scale_ = playerTransform_.scale_;
+	rightArmWT_.rotation_ = playerTransform_.rotation_;
+	rightArmWT_.translation_ = playerTransform_.translation_;
+	rightArmWT_.translation_ = {						
+		rightArmWT_.translation_.x + 0.05f,		// adjust
+		rightArmWT_.translation_.y + 0.0f,		// adjust
+		rightArmWT_.translation_.z + 0.0f		// adjust
+	}; 
+	rightArmWT_.rotation_.z = armAngle;              // from animation
+	rightArmWT_.TransferMatrix();
+	rightArmModel_->Draw(rightArmWT_, *camera_, &objectColor_);
+	
+	leftArmWT_.scale_ = playerTransform_.scale_;
+	leftArmWT_.rotation_ = playerTransform_.rotation_;
+	leftArmWT_.translation_ = playerTransform_.translation_;
+	leftArmWT_.translation_ = {
+		leftArmWT_.translation_.x - 0.05f,		// adjust
+		leftArmWT_.translation_.y + 0.0f,		// adjust
+		leftArmWT_.translation_.z + 0.0f		// adjust
+	};
+	leftArmWT_.rotation_.z = armAngleOpp;
+	leftArmWT_.TransferMatrix();
+	leftArmModel_->Draw(leftArmWT_, *camera_, &objectColor_);
+	
+	rightLegWT_.scale_ = playerTransform_.scale_;
+	rightLegWT_.rotation_ = playerTransform_.rotation_;
+	rightLegWT_.translation_ = playerTransform_.translation_;
+	rightLegWT_.translation_ = {
+		rightLegWT_.translation_.x + 0.05f,		// adjust
+		rightLegWT_.translation_.y - 0.0f,		// adjust
+		rightLegWT_.translation_.z + 0.0f		// adjust
+	};
+	rightLegWT_.rotation_.z = legAngle;
+	rightLegWT_.TransferMatrix();
+	rightLegModel_->Draw(rightLegWT_, *camera_, &objectColor_);
+	
+	leftLegWT_.scale_ = playerTransform_.scale_;
+	leftLegWT_.rotation_ = playerTransform_.rotation_;
+	leftLegWT_.translation_ = playerTransform_.translation_;
+	leftLegWT_.translation_ = {
+		leftLegWT_.translation_.x - 0.05f,		// adjust
+		leftLegWT_.translation_.y - 0.0f,		// adjust
+		leftLegWT_.translation_.z + 0.0f		// adjust
+	};
+	leftLegWT_.rotation_.z = legAngleOpp;
+	leftLegWT_.TransferMatrix();
+	leftLegModel_->Draw(leftLegWT_, *camera_, &objectColor_);
+
+
+
+	//===============================================================================
 
 	if (attackPhase_ == AttackPhase::kRush || attackPhase_ == AttackPhase::kLinger) {
-		//if (lrDirection_ == LRDirection::kRight) {
-		//	worldTransformAttack_.translation_.x = +attackVelocity;
-		//} else {
-		//	worldTransformAttack_.translation_.x = -attackVelocity;
-		//}
 		worldTransformAttack_.TransferMatrix();
 		modelAttack_->Draw(worldTransformAttack_, *camera_);
 	}
 
-	//if (isAiming_) {
-	//	Vector3 start = playerTransform_.translation_;
-	//	start.y += 0.3f;
-	//	Vector3 end = Add(start, MultiplyByS(aimDirection_, kArrowLength));
-	//
-	//	PrimitiveDrawer::GetInstance()->DrawLine3d(start, end, { 1.0f, 0.9f, 0.2f, 1.0f });
-	//
-	//	Vector3 side = { -aimDirection_.y, aimDirection_.x, 0.0f };
-	//	side = MultiplyByS(side, 0.35f);	//side = side * 0.35f;
-	//
-	//	Vector3 back = MultiplyByS(aimDirection_, 0.55f);
-	//	Vector3 headBase = Subtract(end, back);
-	//
-	//	Vector3 head1 = Add(headBase, side)	;
-	//	Vector3 head2 = Subtract(headBase, side);
-	//
-	//	PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
-	//	PrimitiveDrawer::GetInstance()->DrawLine3d(end, head1, { 1.0f, 0.9f, 0.2f, 1.0f });
-	//}
 	if (isAiming_) {
 		Vector3 start = playerTransform_.translation_;
 		start.y += 0.3f;
@@ -498,7 +603,7 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 			MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex - 1);
 
 			if (type == MapChipType::kBlock && next != MapChipType::kBlock) {
-				ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top);
+				ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top + 0.08f);
 			}
 			else if (type == MapChipType::kSlope1L || type == MapChipType::kSlope1R ||
 				type == MapChipType::kSlope2L || type == MapChipType::kSlope2R ||
@@ -519,7 +624,7 @@ void Player::MapCollisionY(CollisionMapInfo& info) {
 			MapChipType next = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex - 1);
 
 			if (type == MapChipType::kBlock && next != MapChipType::kBlock) {
-				ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top);
+				ConsiderSurface(mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex).top + 0.08f);
 			}
 			else if (type == MapChipType::kSlope1L || type == MapChipType::kSlope1R ||
 				type == MapChipType::kSlope2L || type == MapChipType::kSlope2R ||
@@ -728,17 +833,30 @@ void Player::EnemyCollision(Enemy* enemy) {
 
 void Player::BehaviorInitialize() {
 	objectColor_.SetColor(normalColor_);
-	playerTransform_.scale_ = {0.7f, 0.7f, 0.7f};
+	playerTransform_.scale_ = {0.5f, 0.5f, 0.5f};
+
+	if (!isAiming_) {
+		playerTransform_.rotation_.x = 0.0f;
+		playerTransform_.rotation_.z = 0.0f;
+
+		if (lrDirection_ == LRDirection::kRight) {
+			playerTransform_.rotation_.y = std::numbers::pi_v<float> *0.5f;
+		}
+		else {
+			playerTransform_.rotation_.y = std::numbers::pi_v<float> *1.5f;
+		}
+	}
 
 	worldTransformAttack_.Initialize();
 	worldTransformAttack_.translation_ = playerTransform_.translation_;
 	attackPhase_ = AttackPhase::kCoil;
-	isAiming_ = false;
+	//isAiming_ = false;
 }
 
 void Player::BehaviorUpdate() {
 
 	worldUpdater_.Update(playerTransform_);
+
 	CollisionMapInfo info;
 	info.move = velocity_;
 	objectColor_.SetColor(currentColor_);
@@ -872,6 +990,21 @@ void Player::BehaviorUpdate() {
 	//==============================================================================
 	if (info.landingFlag || info.onSlopeL || info.onSlopeR) {
 		onGround_ = true;
+
+
+		playerTransform_.rotation_.x = 0.0f;
+		playerTransform_.rotation_.z = 0.0f;
+		if (velocity_.x < -0.01f) {
+			lrDirection_ = LRDirection::kLeft;
+			playerTransform_.rotation_.y = std::numbers::pi_v<float> *0.5f;
+		}
+		else if (velocity_.x > 0.01f) {
+			lrDirection_ = LRDirection::kRight;
+			playerTransform_.rotation_.y = std::numbers::pi_v<float> *1.5f;
+		}
+
+
+
 	}
 	if (onGround_ || info.onSlopeL || info.onSlopeR) {
 		canAirDash_ = false;
@@ -922,6 +1055,25 @@ void Player::BehaviorUpdate() {
 		if (velocity_.x != 0) velocity_.x *= (1.0f - kAttenuation);
 	}
 
+	if (turnTimer_ > 0.0f) {
+		turnTimer_ -= 1.0f / 60.0f; // 60 FPS
+
+		float destinationRotationYTable[] = {
+			std::numbers::pi_v<float> / 2.0f,       // kRight
+			std::numbers::pi_v<float> *3.0f / 2.0f, // kLeft
+		};
+		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
+
+		playerTransform_.rotation_.y = Lerp(turnFirstRotationY_, destinationRotationY, kTimeTurn);
+
+		if (turnTimer_ <= 0.0f) {
+			turnTimer_ = 0.0f;
+
+			playerTransform_.rotation_.y = destinationRotationY;
+		}
+	}
+
+
 	////------------------------------------////
 	//	[2]collision detection with movement  //
 	////------------------------------------////
@@ -947,15 +1099,20 @@ void Player::BehaviorUpdate() {
 		onGround_ = true;
 		canDash_ = true;
 		canAirDash_ = false;
+
+		
+
 		DebugText::GetInstance()->ConsolePrintf("landing\n");
 	}
 
-	//if (!info.onSlopeL || !info.onSlopeR){
-	//	if ((info.wallFlagL || info.wallFlagR)) {
-	//		velocity_.x = 0.0f;
-	//	}
-	//}
-	
+	UpdateRunningAnimation();
+	worldUpdater_.Update(headWT_);
+	worldUpdater_.Update(rightArmWT_);
+	worldUpdater_.Update(leftArmWT_);
+	worldUpdater_.Update(rightLegWT_);
+	worldUpdater_.Update(leftLegWT_);
+
+
 }
 
 void Player::BehaviorAttackInitialize() {
@@ -1015,9 +1172,16 @@ void Player::BehaviorAttackUpdate() {
 			else if (aimDirection_.x < -0.01f)
 				lrDirection_ = LRDirection::kLeft;
 
-			playerTransform_.rotation_.y = (lrDirection_ == LRDirection::kRight)
-				? std::numbers::pi_v<float> *0.5f
-				: std::numbers::pi_v<float> *1.5f;
+			playerTransform_.rotation_.z += (lrDirection_ == LRDirection::kRight)
+				? -0.3f
+				: 0.3f;
+
+			headWT_.rotation_.z = playerTransform_.rotation_.z;
+			rightArmWT_.rotation_.z = playerTransform_.rotation_.z;
+			leftArmWT_.rotation_.z = playerTransform_.rotation_.z;
+			rightLegWT_.rotation_.z = playerTransform_.rotation_.z;
+			leftLegWT_.rotation_.z = playerTransform_.rotation_.z;
+
 		}
 
 		// slight float while aiming
@@ -1055,6 +1219,7 @@ void Player::BehaviorAttackUpdate() {
 		float t = attackParameter_ / coilDuration_; // coil time
 		playerTransform_.scale_.z = EaseOut(1.0f, 0.1f, t);
 		playerTransform_.scale_.y = EaseOut(1.0f, 1.6f, t);
+
 		
 		{
 			CollisionMapInfo info;
@@ -1072,7 +1237,31 @@ void Player::BehaviorAttackUpdate() {
 	 //----------------------------------------------------------------------
 	case AttackPhase::kRush: 
 	{
+
 		objectColor_.SetColor(attackColor_);
+
+		float angle = std::atan2(aimDirection_.y, aimDirection_.x);
+		playerTransform_.rotation_.z = angle - std::numbers::pi_v<float> *0.5f;
+
+		headWT_.rotation_.z = playerTransform_.rotation_.z;
+		rightArmWT_.rotation_.z = playerTransform_.rotation_.z;
+		leftArmWT_.rotation_.z = playerTransform_.rotation_.z;
+		rightLegWT_.rotation_.z = playerTransform_.rotation_.z;
+		leftLegWT_.rotation_.z = playerTransform_.rotation_.z;
+
+		const float kSpinSpeed = 0.45f;
+		playerTransform_.rotation_.y += kSpinSpeed;
+		
+		if (playerTransform_.rotation_.y > std::numbers::pi_v<float> *2.0f) {
+			playerTransform_.rotation_.y -= std::numbers::pi_v<float> *2.0f;
+		}
+
+		headWT_.rotation_.y = playerTransform_.rotation_.y;
+		rightArmWT_.rotation_.y = playerTransform_.rotation_.y;
+		leftArmWT_.rotation_.y = playerTransform_.rotation_.y;
+		rightLegWT_.rotation_.y = playerTransform_.rotation_.y;
+		leftLegWT_.rotation_.y = playerTransform_.rotation_.y;
+
 		CollisionMapInfo info;
 		info.move = velocity_;
 		info.wallFlagL = false;
@@ -1093,6 +1282,28 @@ void Player::BehaviorAttackUpdate() {
 		if (info.wallFlagL || info.wallFlagR) velocity_.x *= -0.8f;
 		if (info.ceilingFlag)               velocity_.y *= -0.5f;
 
+		Vector3 newDir = velocity_;
+		float length = std::sqrt(newDir.x * newDir.x + newDir.y * newDir.y);
+		if (length > 0.01f) {
+			newDir.x /= length;
+			newDir.y /= length;
+
+			angle = std::atan2(newDir.y, newDir.x);
+			playerTransform_.rotation_.z = angle - std::numbers::pi_v<float> *0.5f;
+
+			headWT_.rotation_.z = playerTransform_.rotation_.z;
+			rightArmWT_.rotation_.z = playerTransform_.rotation_.z;
+			leftArmWT_.rotation_.z = playerTransform_.rotation_.z;
+			rightLegWT_.rotation_.z = playerTransform_.rotation_.z;
+			leftLegWT_.rotation_.z = playerTransform_.rotation_.z;
+
+			if (newDir.x < -0.01f)
+				lrDirection_ = LRDirection::kLeft;
+			else if (newDir.x > 0.01f)
+				lrDirection_ = LRDirection::kRight;
+		}
+
+
 		if (info.onSlopeL) {
 			info.landingFlag = true;
 			velocity_.x -= velocity_.y * 0.8f;
@@ -1105,14 +1316,26 @@ void Player::BehaviorAttackUpdate() {
 			velocity_.y = 0.0f;
 			onGround_ = true;
 			canDash_ = true;
+
+			//playerTransform_.rotation_.x = 0.0f;
+			//playerTransform_.rotation_.z = 0.0f;
+			//if (velocity_.x < -0.01f) {
+			//	lrDirection_ = LRDirection::kLeft;
+			//	playerTransform_.rotation_.y = std::numbers::pi_v<float> *1.5f;
+			//}
+			//else if (velocity_.x > 0.01f) {
+			//	lrDirection_ = LRDirection::kRight;
+			//	playerTransform_.rotation_.y = std::numbers::pi_v<float> *0.5f;
+			//}
+
 			attackPhase_ = AttackPhase::kCoil;
 			behaviorRequest_ = Behavior::kRoot;
 			attackParameter_ = 0;
 		}
 		
 		float t = attackParameter_ / rushDuration_;
-		playerTransform_.scale_.z = EaseOut(0.1f, 1.6f, t);
-		playerTransform_.scale_.y = EaseIn(1.6f, 0.7f, t);
+		playerTransform_.scale_.z = EaseOut(0.1f, 0.8f, t);
+		playerTransform_.scale_.y = EaseIn(0.8f, 0.5f, t);
 
 		if (attackParameter_ >= (rushDuration_)) {
 			attackPhase_ = AttackPhase::kLinger;
@@ -1158,15 +1381,15 @@ void Player::BehaviorAttackUpdate() {
 			velocity_.y = 0.0f;
 			onGround_ = true;
 			canDash_ = true;
+
 			attackPhase_ = AttackPhase::kCoil;
 			behaviorRequest_ = Behavior::kRoot;
 			attackParameter_ = 0;
 		}
-		
 
 		float t = attackParameter_ / lingerDuration_;
-		playerTransform_.scale_.z = EaseOut(1.6f, 1.0f, t);
-		playerTransform_.scale_.y = EaseOut(0.7f, 1.0f, t);
+		playerTransform_.scale_.z = EaseOut(0.8f, 0.5f, t);
+		playerTransform_.scale_.y = EaseOut(0.5f, 0.8f, t);
 
 		if (attackParameter_ >= (lingerDuration_)) {
 			behaviorRequest_ = Behavior::kRoot;
@@ -1179,7 +1402,45 @@ void Player::BehaviorAttackUpdate() {
 	}
 
 	worldUpdater_.Update(playerTransform_);
+	worldUpdater_.Update(headWT_);
+	worldUpdater_.Update(rightArmWT_);
+	worldUpdater_.Update(leftArmWT_);
+	worldUpdater_.Update(rightLegWT_);
+	worldUpdater_.Update(leftLegWT_);
 }
+
+void Player::UpdateRunningAnimation()
+{
+	bool isRunning = onGround_ && std::abs(velocity_.x) > 0.02f;
+
+	if (isRunning) {
+		// Advance the run cycle (faster when P-Speed)
+		float speedFactor = isPSpeed_ ? 1.8f : 1.0f;
+		runTimer_ += runCycleSpeed_ * speedFactor;
+	}
+	else {
+		// Smoothly return to idle
+		runTimer_ *= 0.85f;
+	}
+
+	float swing = std::sin(runTimer_);
+	float swingOpposite = std::sin(runTimer_ + std::numbers::pi_v<float>);
+
+	// ===== Leg animation =====
+	legAngle = swing * 0.6f;          // max swing angle
+	legAngleOpp = swingOpposite * 0.6f;
+
+	// ===== Arm animation (opposite to legs) =====
+	armAngle = -swing * 0.45f;
+	armAngleOpp = -swingOpposite * 0.45f;
+
+	// Slight body bob
+	bodyBob = std::abs(swing) * 0.04f;
+
+	// Apply to the local transforms (example)
+	// You will use these when drawing
+}
+
 
 Player::Player(){}
 

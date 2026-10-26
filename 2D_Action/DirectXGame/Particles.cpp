@@ -35,6 +35,14 @@ void Particles::Initialize(const Vector3& position, const ParticleConfig& config
 		directions_[i] = { std::cos(angle), std::sin(angle), 0.0f };
 	}
 
+
+	
+	
+
+
+
+
+
 	spreadParameter_ = 0;
 	fadeParameter_ = 0;
 	phase_ = Phase::Spread;

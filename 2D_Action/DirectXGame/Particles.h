@@ -58,6 +58,8 @@ struct ParticleConfig {
 };
 
 
+
+
 class Particles {
 public:
 	void Initialize(const Vector3& position, const ParticleConfig& config = ParticleConfig{});
@@ -76,6 +78,7 @@ public:
 	Particles();
 	~Particles();
 
+	
 
 private:
 	void AnimPhaseUpdate();

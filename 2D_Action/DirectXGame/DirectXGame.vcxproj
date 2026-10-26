@@ -187,6 +187,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClCompile Include="MapChip.cpp" />
     <ClCompile Include="Particles.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SkyDome.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="WorldUpdater.cpp" />
   </ItemGroup>
@@ -200,6 +201,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClInclude Include="MapChip.h" />
     <ClInclude Include="Particles.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="SkyDome.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="WorldUpdater.h" />
   </ItemGroup>

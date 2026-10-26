@@ -124,24 +124,28 @@ float MapChip::GetSlopeSurfaceY(uint32_t xIndex, uint32_t yIndex, float worldX) 
 
 	switch (type)
 	{
+   // case MapChipType::kBlock:
+        //        return rect.top - 0.05f;                          // flat top
+        //
+
 	case MapChipType::kSlope1L:	// left high → right low (45°)
-		return Lerp(rect.top + 0.42f, rect.bottom + 0.42f, L);
+		return Lerp(rect.top + 0.43f, rect.bottom + 0.38f, L);
 
 	case MapChipType::kSlope1R:	// left low → right high (45°)
-		return Lerp(rect.bottom + 0.42f, rect.top + 0.42f, R);
+		return Lerp(rect.bottom + 0.38f, rect.top + 0.43f, R);
 
 	// ----- ready for future slopes -----
     case MapChipType::kSlope2L:	// left high → right low (23°)
-        return Lerp(rect.top + 0.25f, rect.bottom + 1.1f, L);
+        return Lerp(rect.top + 0.3f, rect.bottom + 1.1f, L);
 
     case MapChipType::kSlope2R:	// left low → right high (23°)
-        return Lerp(rect.bottom + 1.1f, rect.top + 0.25f, R);
+        return Lerp(rect.bottom + 1.1f, rect.top + 0.3f, R);
 
     case MapChipType::kSlope3L:	// left high → right low (23°)
-        return Lerp(rect.top - 0.75f, rect.bottom + 0.25f, L);
+        return Lerp(rect.top - 0.75f, rect.bottom + 0.15f, L);
 
     case MapChipType::kSlope3R:	// left low → right high (23°)
-        return Lerp(rect.bottom + 0.25f, rect.top - 0.75f, R);
+        return Lerp(rect.bottom + 0.15f, rect.top - 0.75f, R);
 	default:
 		return -10000.0f;		// not a slope
 	}

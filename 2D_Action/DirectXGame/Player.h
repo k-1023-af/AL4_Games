@@ -60,7 +60,7 @@ public:
 	void Draw();
 
 	Vector3 GetCornerPosition(const Vector3& center, Corner corner);
-	Vector3 GetWorldPosition(); 
+	Vector3 GetWorldPosition();
 	//Vector3 GetRotation();
 	WorldUpdater::AABB GetAABB();
 
@@ -76,7 +76,9 @@ public:
 	void BehaviorUpdate();
 	void BehaviorAttackInitialize();
 	void BehaviorAttackUpdate();
-	
+
+	void UpdateRunningAnimation();
+
 	Player();
 	~Player();
 
@@ -101,7 +103,19 @@ private:
 	WorldUpdater worldUpdater_;
 	WorldTransform playerTransform_;
 	WorldTransform worldTransformAttack_;
+
+	WorldTransform headWT_;
+	WorldTransform rightArmWT_;
+	WorldTransform leftArmWT_;
+	WorldTransform rightLegWT_;
+	WorldTransform leftLegWT_;
+
 	Model* playerModel_ = nullptr;
+	Model* headModel_ = nullptr;
+	Model* rightArmModel_ = nullptr;
+	Model* leftArmModel_ = nullptr;
+	Model* rightLegModel_ = nullptr;
+	Model* leftLegModel_ = nullptr;
 	Model* modelAttack_ = nullptr;
 
 	ObjectColor objectColor_;       
@@ -135,7 +149,7 @@ private:
 	static inline const float kHeight	= 0.8f;
 	static inline const float kBlank	= { 0.01f }; //numerical value
 
-	static inline const float kTimeTurn = 0.25f;
+	static inline const float kTimeTurn = 0.2f;
 	float turnFirstRotationY_ = 0.0f;
 	float turnTimer_ = 0.0f;
 
@@ -167,9 +181,19 @@ private:
 	bool isDead_		= false;
 	bool isAiming_		= false;
 
-	float pMeter_		= 0.0f;
-	float pSpeedTimer_	= 0.0f;
-	float aimAngle_		= 0.0f;
+	//--- Running animation -----------------
+
+	float runTimer_			= 0.0f;
+	float runCycleSpeed_	= 0.35f;
+
+	float armAngle			= 0.0f;
+	float armAngleOpp		= 0.0f;
+	float legAngle			= 0.0f;
+	float legAngleOpp		= 0.0f;
+	float bodyBob			= 0.0f;
+	float pMeter_			= 0.0f;
+	float pSpeedTimer_		= 0.0f;
+	float aimAngle_			= 0.0f;
 	Vector3 aimDirection_{ 1.0f, 0.0f, 0.0f };
 	static inline const float kArrowLength = 2.8f;
 };

@@ -2,6 +2,8 @@
 
 using namespace KamataEngine;
 
+
+
 void GameScene::Initialize() {
 	camera_ = new Camera();
 	camera_->Initialize();
@@ -20,6 +22,10 @@ void GameScene::Initialize() {
 
 	AxisIndicator::GetInstance()->SetVisible(false);
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
+
+
+	skyDome_ = new Skydome();
+	skyDome_->Initialize();
 
 	//set map chip resources
 	mapChipField_ = new MapChip();
@@ -191,7 +197,7 @@ void GameScene::Initialize() {
 
 // Create different effects easily:
 
-	Vector3 dummyPos = {};	//replace with real position
+	//Vector3 dummyPos = {};	//replace with real position
 
 // Classic hit spark (old HitEffect)
 	//ParticleConfig hitConfig;
@@ -220,6 +226,22 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
+	skyDome_->Update(*camera_);
+	fireflySpawnTimer_ += 1.0f / 60.0f;
+
+	if (fireflySpawnTimer_ >= kFireflySpawnInterval && fireflies_.size() < kMaxFireflies) {
+		fireflySpawnTimer_ = 0.0f;
+
+		// Spawn around the camera / player area
+		Vector3 camPos = camera_->translation_;
+		Vector3 spawnPos;
+		spawnPos.x = camPos.x + (RandomFloat(-18.0f, 18.0f));
+		spawnPos.y = RandomFloat(0.5f, 6.5f);          // floating above the ground
+		spawnPos.z = camPos.z + (RandomFloat(-12.0f, 8.0f));  // some closer, some farther
+
+		Particles* firefly = Particles::Create(spawnPos, MakeFireflyConfig());
+		fireflies_.push_back(firefly);
+	}
 
 	ChangePhase();
 	
@@ -229,9 +251,12 @@ void GameScene::Update() {
 		fade_->Update();
 		//break;
 	case Phase::kPlay:
-		player_->Update();
+
 		targetCamera_->Update();
 		targetCamera_->SetPSpeed(player_->IsPSpeed());
+		
+		player_->Update();
+		
 	 
 		for (size_t i = 0; i < worldTransformBlocks_.size(); ++i) {
 		std::vector<WorldTransform*>& worldTransformBlockLine = worldTransformBlocks_[i];
@@ -299,6 +324,9 @@ void GameScene::Update() {
 void GameScene::Draw() {
 
 	Model::PreDraw();
+	if (skyDome_) {
+		skyDome_->Draw(*camera_);
+	}
 
 	//draw blocks
 	for (uint32_t i = 0; i < worldTransformBlocks_.size(); ++i) {
@@ -345,6 +373,11 @@ void GameScene::Draw() {
 	for (Particles* p : hitEffects_) {
 		p->Draw();
 	}
+
+	for (Particles* p : fireflies_) {
+		p->Draw();
+	}
+
 
 	Model::PostDraw();
 	if (fade_) fade_->Draw();
@@ -410,6 +443,17 @@ GameScene::~GameScene() {
 		delete hitEffect;
 	}
 
+	for (auto it = fireflies_.begin(); it != fireflies_.end(); ) {
+		(*it)->Update();
+		if ((*it)->IsDead()) {
+			delete* it;
+			it = fireflies_.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+
 	for (Enemy* enemy1 : enemies_) {
 		delete enemy1;
 	}
@@ -433,7 +477,7 @@ GameScene::~GameScene() {
 	}
 	worldTransformBlocks_.clear();
 
-	//delete mapChipField_;
+	delete mapChipField_;
 	//mapChipField_ = nullptr;
 
 	delete modelBlock_;
@@ -450,6 +494,8 @@ GameScene::~GameScene() {
 
 	delete modelSlope2R_;
 	//modelSlope1R_ = nullptr;
+
+	delete skyDome_;
 	
 	delete fade_;
 	//fade_ = nullptr;
@@ -459,4 +505,7 @@ GameScene::~GameScene() {
 
 	delete camera_;
 	//camera_ = nullptr;
+
+	
+	
 }

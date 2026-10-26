@@ -5,20 +5,24 @@
 #include <algorithm>
 #include <numbers>
 #include <cstdint>
+#include "SkyDome.h"
 #include "MapChip.h"
 #include "Player.h"
 #include "Fade.h"
 #include "WorldUpdater.h"
 #include "CameraController.h"
 #include "Particles.h"
+#include "Function.h"
 //#include "Sky.h"
 #include "Enemy.h"
 #include <vector>
+#include <cstdlib>
 #include <memory>
 
 using namespace KamataEngine;
 
 //class WorldUpdater;
+//class SkyDome;
 
 const int kWindowWidth = 1280;
 const int kWindowHeight = 720;
@@ -40,6 +44,22 @@ public:
 	void ChangePhase();
 	void CreateHitEffect(const Vector3& position);
 
+	inline ParticleConfig MakeFireflyConfig() {
+		ParticleConfig cfg;
+		cfg.style = ParticleStyle::Twinkle;   // or Pulse
+		cfg.partCount = 1;                        // one particle per spawn
+		cfg.width = 0.25f;
+		cfg.height = 0.25f;
+		cfg.spreadDuration = 40.0f;                    // how long it stays visible
+		cfg.fadeDuration = 25.0f;
+		cfg.spreadStartScale = 0.4f;
+		cfg.spreadEndScale = 1.1f;
+		cfg.fadeEndScale = 0.2f;
+		cfg.startColor = { 1.0f, 0.95f, 0.4f, 0.9f }; // warm yellow
+		cfg.blendMode = BlendMode::Add;           // if your engine supports it
+		return cfg;
+	}
+
 	bool IsFinished() const { return finished_; } // true → game over
 	void ClearFinished() { finished_ = false; }
 
@@ -60,12 +80,17 @@ private:
 
 	std::list<Enemy*> enemies_;
 	std::list<Particles*> hitEffects_;
+	std::list<Particles*> fireflies_;
+	float fireflySpawnTimer_ = 0.0f;
+	const float kFireflySpawnInterval = 0.12f;   // spawn every ~7 frames
+	const int   kMaxFireflies = 45;
 
 	Model* enemyModel_ = nullptr;
 
 	Phase phase_ = Phase::kFadeIn;
 	Fade* fade_ = nullptr;
-
+	
+	Skydome* skyDome_ = nullptr;
 	MapChip* mapChipField_ = nullptr;
 
 	Model* modelBlock_ = nullptr;
