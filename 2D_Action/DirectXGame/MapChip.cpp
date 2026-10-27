@@ -16,6 +16,12 @@ namespace {
         {"3R", MapChipType::kSlope3R},
         {"4L", MapChipType::kSlope4L},
         {"4R", MapChipType::kSlope4R},
+
+        // Enemies
+        {"E1", MapChipType::kEnemy1},	// Normal
+        {"E2", MapChipType::kEnemy2},	// Shielded
+
+        {"G",  MapChipType::kGoal},
     };
 }
 

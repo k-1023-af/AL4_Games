@@ -15,13 +15,12 @@ class Player; // forward
 class GameScene; //forward
 
 
-
 class Enemy {
 
 public:
 	enum class EnemyType {
 		Normal,
-		Shield, //placeholder
+		Shield, 
 	};
 
 	enum class Behavior {
@@ -54,6 +53,8 @@ public:
 
 	Vector3 GetWorldPosition();
 	WorldUpdater::AABB GetAABB();
+	EnemyType GetType() const { return enemyType_; }
+	void OnStomped(GameScene* gamescene);
 
 	Enemy();
 	~Enemy();
@@ -67,21 +68,24 @@ private:
 	//=============================
 	// Member Variables
 	//=============================
+
+	static Model* modelNormal_;
+	static Model* modelShield_;
+
+	Model* model_ = nullptr;
 	EnemyType enemyType_ = EnemyType::Normal;
 
 	WorldUpdater worldUpdater_;
-	WorldTransform enemyTransform_;
+	WorldTransform worldTransform_;
 	Camera* camera_;
 	MapChip* mapChipField_ = nullptr;
-
-	Model* enemy1Model_ = nullptr;
 
 	Behavior behavior_ = Behavior::kWalk;
 	Behavior behaviorRequest_ = Behavior::kUnknown;
 	DeathPhase deathPhase_ = DeathPhase::kBefore;
 
 	LRDirection lrDirection_ = LRDirection::kLeft;
-
+	  
 	Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
 
 	float kWalkSpeed_ = 0.05f;
@@ -96,11 +100,13 @@ private:
 	bool isCollisionDisabled_ = false;
 
 	static inline const float kLimitWalkSpeed = 0.05f;
-	static inline const float kGravity = -0.3f;
+	static inline const float kGravity = -0.1f;
 	static inline const float kWalkMotionAngleStart = 60.0f;
 	static inline const float kWalkMotionAngleEnd = 90.0f;
 	static inline const float kWalkMotionTime = 1.0f;
 	static inline const float kWidth = 0.8f;
 	static inline const float kHeight = 0.8f;
+
+	uint32_t enemyDefeatSoundHandle_ = 0;
 };
 

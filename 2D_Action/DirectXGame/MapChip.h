@@ -10,14 +10,19 @@ using namespace KamataEngine;
 enum class MapChipType {
 	kBlank,
 	kBlock,
-	kSlope1L,
-	kSlope1R,
-	kSlope2L,
-	kSlope2R,
-	kSlope3L,
-	kSlope3R,
-	kSlope4L,
-	kSlope4R,
+	kSlope1L,	// downward 45 
+	kSlope1R,	// upward 45
+	kSlope2L,	// downward top 22.5
+	kSlope2R,	// upward top 22.5
+	kSlope3L,	// downward bottom 22.5
+	kSlope3R,	// upward bottom 22.5
+	kSlope4L,	// downward curve
+	kSlope4R,	// upward curve
+	
+	kEnemy1,	// normal enemy
+	kEnemy2,	// shielded enemy
+
+	kGoal,		// clear levels
 };
 
 struct MapChipData {

@@ -2,18 +2,32 @@
 //#include "Player.h"
 #include "GameScene.h"
 
+Model* Enemy::modelNormal_ = nullptr;
+Model* Enemy::modelShield_ = nullptr;
+
 void Enemy::Initialize(KamataEngine::Camera* camera, const Vector3& position, EnemyType type) {
 	camera_ = camera;
 	enemyType_ = type;
 
-	enemyTransform_.Initialize();
+	enemyDefeatSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/hit.wav");
 
-	enemyTransform_.scale_ = { 0.25f, 0.25f, 0.25f };
-	//enemyTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f; // 90度をラジアンに変換
-	enemyTransform_.rotation_ = { 0.0f, 3.0f, 0.0f };
-	enemyTransform_.translation_ = position;
+	if (!modelNormal_) {
+		modelNormal_ = Model::CreateFromOBJ("enemy1", true);
+	}
+	if (!modelShield_) {
+		modelShield_ = Model::CreateFromOBJ("enemy2", true);  
+	}
 
-	//enemy1Model_ = Model::CreateFromOBJ("enemy1", true);
+	model_ = (enemyType_ == EnemyType::Shield) ? modelShield_ : modelNormal_;
+
+	worldTransform_.Initialize();
+	worldTransform_.scale_ = { 0.6f, 0.6f, 0.6f };
+	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f; // 90度をラジアンに変換
+	worldTransform_.translation_ = position;
+
+	//worldTransform_.rotation_ = { 0.0f, 3.0f, 0.0f };
+	//worldTransform_.translation_ = position;
+	//model_ = Model::CreateFromOBJ("enemy1", true);
 
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 	onGround_ = false;
@@ -54,9 +68,9 @@ void Enemy::Update() {
 }
 
 void Enemy::Draw(KamataEngine::Camera& camera) {
-	if (!enemy1Model_) return;
+	if (!model_) return;
 
-	enemy1Model_->Draw(enemyTransform_, camera);
+	model_->Draw(worldTransform_, camera);
 }
 
 void Enemy::OnCollision(const Player* player, GameScene* gamescene) {
@@ -81,13 +95,15 @@ void Enemy::OnCollision(const Player* player, GameScene* gamescene) {
 	}
 
 	if (canKill) {
+		Audio::GetInstance()->PlayWave(enemyDefeatSoundHandle_);
+
 		isCollisionDisabled_ = true;
 		behaviorRequest_ = Behavior::kDeath;
 
 		Vector3 effectPos = {
-			(enemyTransform_.translation_.x + player->GetTransform().translation_.x) * 0.5f,
-			(enemyTransform_.translation_.y + player->GetTransform().translation_.y) * 0.5f,
-			(enemyTransform_.translation_.z + player->GetTransform().translation_.z) * 0.5f
+			(worldTransform_.translation_.x + player->GetTransform().translation_.x) * 0.5f,
+			(worldTransform_.translation_.y + player->GetTransform().translation_.y) * 0.5f,
+			(worldTransform_.translation_.z + player->GetTransform().translation_.z) * 0.5f
 		};
 		gamescene->CreateHitEffect(effectPos);
 	}
@@ -96,27 +112,56 @@ void Enemy::OnCollision(const Player* player, GameScene* gamescene) {
 void Enemy::MapCollision() {
 	if (!mapChipField_) return;
 
-	float blank = 0.01f;
+	const float blank = 0.01f;
+	onGround_ = false;
 
-	// replace with similar code as Player class
-	MapChip::IndexSet index = mapChipField_->GetMapChipIndexSetByPosition(enemyTransform_.translation_);
+	//===== Ground / Slope Check =====
+	MapChip::IndexSet index = mapChipField_->GetMapChipIndexSetByPosition(worldTransform_.translation_);
 	MapChipType type = mapChipField_->GetMapChipTypeByIndex(index.xIndex, index.yIndex);
 
-	// Floor check
-	if (type == MapChipType::kBlock || type == MapChipType::kSlope1L || type == MapChipType::kSlope1R) {
-		float surfaceY = (type == MapChipType::kBlock)
-			? mapChipField_->GetRectByIndex(index.xIndex, index.yIndex).top
-			//: mapChipField_->GetSurfaceY(index.xIndex, index.yIndex, enemyTransform_.translation_.x);
-			: mapChipField_->GetSlopeSurfaceY(index.xIndex, index.yIndex, enemyTransform_.translation_.x);
-		float bottom = enemyTransform_.translation_.y - kHeight * 0.5f;
-		if (bottom <= surfaceY + blank) {
-			enemyTransform_.translation_.y = surfaceY + kHeight * 0.5f + blank;
-			velocity_.y = 0.0f;
-			onGround_ = true;
-		}
+	float surfaceY = -10000.0f;
+
+	if (type == MapChipType::kBlock) {
+		surfaceY = mapChipField_->GetRectByIndex(index.xIndex, index.yIndex).top + 0.2f;
+	}
+	else if (type == MapChipType::kSlope1L || type == MapChipType::kSlope1R ||
+		type == MapChipType::kSlope2L || type == MapChipType::kSlope2R ||
+		type == MapChipType::kSlope3L || type == MapChipType::kSlope3R) {
+		surfaceY = mapChipField_->GetSlopeSurfaceY(index.xIndex, index.yIndex, worldTransform_.translation_.x) + 0.2f;
 	}
 
-	// Wall check
+	float bottom = worldTransform_.translation_.y - kHeight * 0.5f + 0.325f;
+
+	if (surfaceY > -9999.0f && bottom <= surfaceY + blank) {
+		worldTransform_.translation_.y = surfaceY + kHeight * 0.5f - 0.4f + blank;
+		velocity_.y = 0.0f;
+		onGround_ = true;
+	}
+
+	//===== Simple Wall Check (left / right) =====
+	// Left
+	MapChip::IndexSet leftIndex = mapChipField_->GetMapChipIndexSetByPosition(
+		{ worldTransform_.translation_.x - kWidth * 0.5f, worldTransform_.translation_.y, 0.0f });
+	MapChipType leftType = mapChipField_->GetMapChipTypeByIndex(leftIndex.xIndex, leftIndex.yIndex);
+
+	if (leftType == MapChipType::kBlock) {
+		MapChip::Rect rect = mapChipField_->GetRectByIndex(leftIndex.xIndex, leftIndex.yIndex);
+		worldTransform_.translation_.x = rect.right + kWidth * 0.5f + blank;
+		velocity_.x *= -1.0f;          // turn around
+		lrDirection_ = LRDirection::kRight;
+	}
+
+	// Right
+	MapChip::IndexSet rightIndex = mapChipField_->GetMapChipIndexSetByPosition(
+		{ worldTransform_.translation_.x + kWidth * 0.5f, worldTransform_.translation_.y, 0.0f });
+	MapChipType rightType = mapChipField_->GetMapChipTypeByIndex(rightIndex.xIndex, rightIndex.yIndex);
+
+	if (rightType == MapChipType::kBlock) {
+		MapChip::Rect rect = mapChipField_->GetRectByIndex(rightIndex.xIndex, rightIndex.yIndex);
+		worldTransform_.translation_.x = rect.left - kWidth * 0.5f - blank;
+		velocity_.x *= -1.0f;          // turn around
+		lrDirection_ = LRDirection::kLeft;
+	}
 }
 
 void Enemy::BehaviorWalkInitialize() {
@@ -126,6 +171,7 @@ void Enemy::BehaviorWalkInitialize() {
 }
 
 void Enemy::BehaviorWalkUpdate() {
+	//===== 1. Update facing direction =====
 	if (velocity_.x < -0.001f) {
 		lrDirection_ = LRDirection::kLeft;
 	}
@@ -133,28 +179,51 @@ void Enemy::BehaviorWalkUpdate() {
 		lrDirection_ = LRDirection::kRight;
 	}
 
+	//===== 2. Set model rotation (turn around) =====
+	if (lrDirection_ == LRDirection::kRight) {
+		worldTransform_.rotation_.y = std::numbers::pi_v<float> *1.5f;   // face right
+	}
+	else {
+		worldTransform_.rotation_.y = std::numbers::pi_v<float> *0.5f;   // face left
+	}
+
+	// walking tilt (Z axis)
 	walkTimer_ += 1.0f / 60.0f;
-
 	float param = std::cosf(2.0f * std::numbers::pi_v<float> *(walkTimer_ / 30.0f));
-	float angle = 60.0f + 30.0f * (param + 1.0f) * 0.5f;						// 60° → 90°
+	float angle = 60.0f + 30.0f * (param + 1.0f) * 0.5f;
 	float zTilt = std::cosf(angle * std::numbers::pi_v<float> / 180.0f);
+	worldTransform_.rotation_.z = -velocity_.x * zTilt * 1.5f;
 
-	enemyTransform_.rotation_ = { 0.0f, 3.0f, -velocity_.x * zTilt * 2.0f };
-
+	//===== 3. Gravity =====
 	if (!onGround_) {
-		velocity_.y -= kGravity;
+		velocity_.y += kGravity;
+		velocity_.y = (std::max)(velocity_.y, -0.5f); // terminal velocity
 	}
 	else {
 		velocity_.y = 0.0f;
 	}
 
+	//===== 4. Horizontal speed =====
 	velocity_.x = (lrDirection_ == LRDirection::kLeft) ? -kWalkSpeed_ : kWalkSpeed_;
 
-	enemyTransform_.translation_.x += velocity_.x;
-	enemyTransform_.translation_.y += velocity_.y;
-	enemyTransform_.translation_.z += velocity_.z;
+	//===== 5. Sub-stepping movement + collision =====
+	const int hSteps = 4;   // horizontal sub-steps
+	const int vSteps = 4;   // vertical sub-steps
 
-	worldUpdater_.Update(enemyTransform_);
+	// Horizontal
+	for (int i = 0; i < hSteps; ++i) {
+		worldTransform_.translation_.x += velocity_.x / hSteps;
+		MapCollision();                     // check walls every sub-step
+	}
+
+	// Vertical
+	for (int i = 0; i < vSteps; ++i) {
+		worldTransform_.translation_.y += velocity_.y / vSteps;
+		MapCollision();                     // check ground every sub-step
+	}
+
+	isCollisionDisabled_ = false;
+	worldUpdater_.Update(worldTransform_);
 }
 
 void Enemy::BehaviorDeathInitialize() {
@@ -176,15 +245,15 @@ void Enemy::BehaviorDeathUpdate() {
 		deathParameter_++;
 
 		// tumble animation
-		enemyTransform_.rotation_.y += std::numbers::pi_v<float> / 8.0f;
-		enemyTransform_.rotation_.x += std::numbers::pi_v<float> / 8.0f;
+		worldTransform_.rotation_.y += std::numbers::pi_v<float> / 8.0f;
+		worldTransform_.rotation_.x += std::numbers::pi_v<float> / 8.0f;
 
 		// shrink
 		float t = static_cast<float>(deathParameter_) / animDuration_;
 		float scale = 0.25f * (1.0f - t * 0.5f);
-		enemyTransform_.scale_ = { scale, scale, scale };
+		worldTransform_.scale_ = { scale, scale, scale };
 
-		worldUpdater_.Update(enemyTransform_);
+		worldUpdater_.Update(worldTransform_);
 
 		if (deathParameter_ >= static_cast<uint32_t>(animDuration_)) {
 			isDead_ = true;
@@ -210,11 +279,11 @@ Vector3 Enemy::GetWorldPosition() {
 
 	Vector3 worldPos;
 
-	worldPos.x = enemyTransform_.matWorld_.m[3][0];
+	worldPos.x = worldTransform_.matWorld_.m[3][0];
 	;
-	worldPos.y = enemyTransform_.matWorld_.m[3][1];
+	worldPos.y = worldTransform_.matWorld_.m[3][1];
 	;
-	worldPos.z = enemyTransform_.matWorld_.m[3][2];
+	worldPos.z = worldTransform_.matWorld_.m[3][2];
 	;
 
 	return worldPos;
@@ -231,8 +300,21 @@ WorldUpdater::AABB Enemy::GetAABB() {
 	return aabb;
 }
 
+void Enemy::OnStomped(GameScene* gamescene) {
+	if (behavior_ == Behavior::kDeath || isCollisionDisabled_) return;
+
+	Audio::GetInstance()->PlayWave(enemyDefeatSoundHandle_);
+
+	isCollisionDisabled_ = true;
+	behaviorRequest_ = Behavior::kDeath;
+
+	// Optional hit effect
+	Vector3 effectPos = worldTransform_.translation_;
+	gamescene->CreateHitEffect(effectPos);
+}
+
 Enemy::Enemy() {}
 
 Enemy::~Enemy() {
-	delete enemy1Model_;
+	//delete enemyDefeatSoundHandle_;
 }

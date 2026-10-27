@@ -66,6 +66,9 @@ public:
 
 	Vector3 GetScale();
 	LRDirection GetLRDirection() const { return lrDirection_; }
+	float GetPMeter() const { return pMeter_; }
+	void OnDamaged(const Vector3& hitPos);
+	bool IsInvincible() const { return isInvincible_; }
 
 	void SetMapChipField(MapChip* mapChipField);
 	void MapCollisionX(CollisionMapInfo& info);
@@ -78,6 +81,8 @@ public:
 	void BehaviorAttackUpdate();
 
 	void UpdateRunningAnimation();
+	void BounceFromStomp();
+
 
 	Player();
 	~Player();
@@ -98,6 +103,7 @@ public:
 	bool IsDead() const { return isDead_; }
 	bool IsAttack() const { return isAttack_; }
 	bool IsPSpeed() const { return isPSpeed_; }
+	bool CanAirDash() const { return canAirDash_ && canDash_ && isPSpeed_; }
 
 private:
 	WorldUpdater worldUpdater_;
@@ -180,11 +186,15 @@ private:
 	bool isAttack_		= false;
 	bool isDead_		= false;
 	bool isAiming_		= false;
+	bool isInvincible_	= false;
 
 	//--- Running animation -----------------
 
 	float runTimer_			= 0.0f;
 	float runCycleSpeed_	= 0.35f;
+	float invincibleTimer_	= 0.0f;
+
+	const float kInvincibleTime = 90.0f;
 
 	float armAngle			= 0.0f;
 	float armAngleOpp		= 0.0f;
@@ -196,5 +206,11 @@ private:
 	float aimAngle_			= 0.0f;
 	Vector3 aimDirection_{ 1.0f, 0.0f, 0.0f };
 	static inline const float kArrowLength = 2.8f;
+
+	uint32_t airDashReadySoundHandle_ = 0;
+	uint32_t bounceSoundHandle_ = 0;
+	uint32_t hitSoundHandle_ = 0;
+	uint32_t jumpSoundHandle_ = 0;
+	uint32_t dashAttackSoundHandle_ = 0;
 };
 

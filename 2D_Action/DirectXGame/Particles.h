@@ -57,9 +57,6 @@ struct ParticleConfig {
 	std::array<Vector3, 8> rotations{};
 };
 
-
-
-
 class Particles {
 public:
 	void Initialize(const Vector3& position, const ParticleConfig& config = ParticleConfig{});
@@ -85,6 +82,7 @@ private:
 
 	static Model* model_;
 	static Camera* camera_;
+	WorldUpdater worldUpdater_;
 
 	ParticleConfig config_;
 	Vector3 originPos_{};

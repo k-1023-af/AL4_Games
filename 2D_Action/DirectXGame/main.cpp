@@ -8,9 +8,13 @@
 
 using namespace KamataEngine;
 
+
+
 enum class SceneId {
 	Title,
-	Game
+	Game,
+	Clear,
+
 };
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -42,6 +46,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		if (current == SceneId::Title) {
 			titleScene->Update();
 
+
 			if (titleScene->GetRequest() == IScene::Request::GoToGame) {
 				titleScene->ClearRequest();
 
@@ -49,6 +54,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				gameScene = new GameScene();
 				gameScene->Initialize(); // fresh game / retry
 				current = SceneId::Game;
+
+				//Audio::GetInstance()->PlayWave(soundBGM_, true, 0.8f);
 			}
 		}
 		else if (current == SceneId::Game) {
@@ -60,13 +67,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			gameScene->Update();
 
 			if (gameScene->IsFinished()) {
-				gameScene->ClearFinished();
-				titleScene->SetShowGameOver(true);
+				//if (gameScene->IsCleared()) {
+				//	current = SceneId::Clear;
+				//
+				//}
+				//else {
+					gameScene->ClearFinished();
+					titleScene->SetShowGameOver(true);
 
-				delete gameScene;
-				gameScene = nullptr;
+					delete gameScene;
+					gameScene = nullptr;
 
-				current = SceneId::Title;
+					current = SceneId::Title;
+				//}
+
 			}
 		}
 

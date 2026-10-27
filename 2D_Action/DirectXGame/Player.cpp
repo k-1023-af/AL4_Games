@@ -43,6 +43,12 @@ void Player::Initialize(Camera* camera, const Vector3& position) {
 	rightLegModel_ = Model::CreateFromOBJ("rightLeg", true);
 	leftLegModel_ = Model::CreateFromOBJ("leftLeg", true);
 
+	airDashReadySoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/canAirDash.wav");
+	bounceSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/bounce.wav");
+	hitSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/isHit.wav");
+	jumpSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/jump.wav");
+	dashAttackSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/airDash.wav");
+
 	// modelAttack_
 	//-----------------------------
 	modelAttack_ = Model::CreateFromOBJ("DashAttack", true);
@@ -282,6 +288,28 @@ Vector3 Player::GetScale() {
 	worldScale.y = playerTransform_.matWorld_.m[1][1];
 	worldScale.z = playerTransform_.matWorld_.m[2][2];
 	return worldScale;
+}
+
+void Player::OnDamaged(const Vector3& hitPos) {
+	if (isInvincible_ || isDead_ || isAttack_) return;
+
+	// Hit sound here
+	Audio::GetInstance()->PlayWave(hitSoundHandle_);
+
+	// Knockback direction (away from enemy)
+	float dir = (playerTransform_.translation_.x > hitPos.x) ? 1.0f : -1.0f;
+
+	velocity_.x = dir * 0.35f;   // horizontal knockback
+	velocity_.y = 0.25f;         // small upward boost
+
+	// Start invincibility
+	isInvincible_ = true;
+	invincibleTimer_ = kInvincibleTime;
+
+	// Optional: cancel attack if currently attacking
+	behaviorRequest_ = Behavior::kRoot;
+	isAttack_ = false;
+	isAiming_ = false;
 }
 
 void Player::SetMapChipField(MapChip* mapChipField) {
@@ -1009,8 +1037,11 @@ void Player::BehaviorUpdate() {
 	if (onGround_ || info.onSlopeL || info.onSlopeR) {
 		canAirDash_ = false;
 		frameCount = 0.0f;
-		if (Input::GetInstance()->TriggerKey(DIK_B)) {
+		if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			DebugText::GetInstance()->ConsolePrintf("JUMP!!\n");
+			// Jump sound here
+			Audio::GetInstance()->PlayWave(jumpSoundHandle_);
+
 			velocity_.y = kJumpAcceleration;
 			if (lrDirection_ == LRDirection::kLeft) {
 				velocity_.x -= 0.2f * accel;
@@ -1023,16 +1054,19 @@ void Player::BehaviorUpdate() {
 		}
 	}
 	else {
-		if (behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_B)) {
+		if (behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_SPACE)) {
 			frameCount++;
 			if (frameCount >= 2.0f) {
+				if (!canAirDash_ && isPSpeed_) {
+					Audio::GetInstance()->PlayWave(airDashReadySoundHandle_);
+				}
 				canAirDash_ = isPSpeed_;
 			}
 		}
 	}
 	
 	if (canAirDash_ && canDash_) {
-		if (Input::GetInstance()->PushKey(DIK_B)) {
+		if (Input::GetInstance()->PushKey(DIK_SPACE)) {
 			//start aiming
 			behaviorRequest_ = Behavior::kAttack;
 			attackPhase_ = AttackPhase::kAim;
@@ -1100,10 +1134,44 @@ void Player::BehaviorUpdate() {
 		canDash_ = true;
 		canAirDash_ = false;
 
-		
-
 		DebugText::GetInstance()->ConsolePrintf("landing\n");
 	}
+
+
+	if (isInvincible_) {
+		invincibleTimer_ -= 1.0f;
+
+		// Flash (blink every few frames)
+		bool visible = (static_cast<int>(invincibleTimer_) / 4) % 2 == 0;
+		objectColor_.SetColor({
+			currentColor_.x,
+			currentColor_.y,
+			currentColor_.z,
+			visible ? 1.0f : 0.2f
+			});
+
+		if (invincibleTimer_ <= 0.0f) {
+			isInvincible_ = false;
+
+
+
+			objectColor_.SetColor(currentColor_); // restore normal color
+		}
+	}
+	
+		if (lrDirection_ != LRDirection::kRight && velocity_.x > 0) {
+			lrDirection_ = LRDirection::kRight;
+			turnFirstRotationY_ = playerTransform_.rotation_.y;
+			turnTimer_ = kTimeTurn;
+		}
+	
+	
+		if (lrDirection_ != LRDirection::kLeft && velocity_.x < 0) {
+			lrDirection_ = LRDirection::kLeft;
+			turnFirstRotationY_ = playerTransform_.rotation_.y;
+			turnTimer_ = kTimeTurn;
+		}
+	
 
 	UpdateRunningAnimation();
 	worldUpdater_.Update(headWT_);
@@ -1189,8 +1257,11 @@ void Player::BehaviorAttackUpdate() {
 		velocity_.y = (std::max)(velocity_.y, -0.04f);
 
 		// Confirm dash with Jump
-		if (!Input::GetInstance()->PushKey(DIK_B) && (inputX != 0.0f || inputY != 0.0f || true)) {
-			// even if no key is held we still allow the dash in the last direction
+		if (!Input::GetInstance()->PushKey(DIK_SPACE) && (inputX != 0.0f || inputY != 0.0f || true)) {
+			
+			// ===== Dash Attack sound here =====
+			Audio::GetInstance()->PlayWave(dashAttackSoundHandle_);
+			
 			velocity_ = MultiplyByS(aimDirection_, attackVelocity_ * chargePower_);
 
 			pMeter_ = 0.5f;
@@ -1279,9 +1350,15 @@ void Player::BehaviorAttackUpdate() {
 			}
 		}
 		
-		if (info.wallFlagL || info.wallFlagR) velocity_.x *= -0.8f;
-		if (info.ceilingFlag)               velocity_.y *= -0.5f;
-
+		if (info.wallFlagL || info.wallFlagR) {
+			velocity_.x *= -0.8f;
+			Audio::GetInstance()->PlayWave(bounceSoundHandle_);
+		}
+		if (info.ceilingFlag) { 
+			velocity_.y *= -0.5f; 
+			Audio::GetInstance()->PlayWave(bounceSoundHandle_);
+		}
+		
 		Vector3 newDir = velocity_;
 		float length = std::sqrt(newDir.x * newDir.x + newDir.y * newDir.y);
 		if (length > 0.01f) {
@@ -1401,6 +1478,24 @@ void Player::BehaviorAttackUpdate() {
 
 	}
 
+	if (isInvincible_) {
+		invincibleTimer_ -= 1.0f;
+
+		// Flash (blink every few frames)
+		bool visible = (static_cast<int>(invincibleTimer_) / 4) % 2 == 0;
+		objectColor_.SetColor({
+			currentColor_.x,
+			currentColor_.y,
+			currentColor_.z,
+			visible ? 1.0f : 0.2f
+			});
+
+		if (invincibleTimer_ <= 0.0f) {
+			isInvincible_ = false;
+			objectColor_.SetColor(currentColor_); // restore normal color
+		}
+	}
+
 	worldUpdater_.Update(playerTransform_);
 	worldUpdater_.Update(headWT_);
 	worldUpdater_.Update(rightArmWT_);
@@ -1441,11 +1536,29 @@ void Player::UpdateRunningAnimation()
 	// You will use these when drawing
 }
 
+void Player::BounceFromStomp() {
+	velocity_.y = 0.55f;   // adjust
+
+	isInvincible_ = true;
+	invincibleTimer_ = 20.0f;
+}
+
 
 Player::Player(){}
 
 Player::~Player(){
 	delete playerModel_;
+	delete headModel_;
+	delete rightArmModel_;
+	delete leftArmModel_;
+	delete rightLegModel_;
+	delete leftLegModel_;
 	delete modelAttack_;
+
+	//delete airDashReadySoundHandle_;
+	//delete bounceSoundHandle_;
+	//delete hitSoundHandle_;
+	//delete jumpSoundHandle_;
+	//delete dashAttackSoundHandle_;
 }
 

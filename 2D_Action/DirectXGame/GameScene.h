@@ -8,6 +8,7 @@
 #include "SkyDome.h"
 #include "MapChip.h"
 #include "Player.h"
+#include "PlayerHUD.h"
 #include "Fade.h"
 #include "WorldUpdater.h"
 #include "CameraController.h"
@@ -15,6 +16,7 @@
 #include "Function.h"
 //#include "Sky.h"
 #include "Enemy.h"
+#include "Goal.h"
 #include <vector>
 #include <cstdlib>
 #include <memory>
@@ -62,6 +64,7 @@ public:
 
 	bool IsFinished() const { return finished_; } // true → game over
 	void ClearFinished() { finished_ = false; }
+	bool IsCleared() const { return isCleared_; }
 
 	GameScene();
 	~GameScene();
@@ -77,6 +80,7 @@ private:
 
 	Player* player_ = nullptr;
 	CameraController* targetCamera_ = nullptr;
+	Goal* goal_ = nullptr;
 
 	std::list<Enemy*> enemies_;
 	std::list<Particles*> hitEffects_;
@@ -92,6 +96,7 @@ private:
 	
 	Skydome* skyDome_ = nullptr;
 	MapChip* mapChipField_ = nullptr;
+	PlayerHUD* playerHUD_ = nullptr;
 
 	Model* modelBlock_ = nullptr;
 	Model* modelSlope1L_ = nullptr;	// 45 degrees
@@ -106,5 +111,15 @@ private:
 	std::vector<std::vector<WorldTransform*>> worldTransformBlocks_;
 
 	bool finished_ = false;
+	bool isCleared_ = false;
+
+
+	//uint32_t jumpSoundHandle_ = 0;
+	//uint32_t hitSoundHandle_ = 0;
+	//uint32_t enemyDefeatSoundHandle_ = 0;
+	//uint32_t airDashReadySoundHandle_ = 0;
+	//uint32_t bounceSoundHandle_ = 0;
+	uint32_t levelStartSoundHandle_ = 0;
+	uint32_t levelClearSoundHandle_ = 0;
 };
 

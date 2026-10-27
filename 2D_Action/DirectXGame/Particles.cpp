@@ -36,13 +36,6 @@ void Particles::Initialize(const Vector3& position, const ParticleConfig& config
 	}
 
 
-	
-	
-
-
-
-
-
 	spreadParameter_ = 0;
 	fadeParameter_ = 0;
 	phase_ = Phase::Spread;
@@ -56,14 +49,15 @@ void Particles::Update() {
 
 	for (size_t i = 0; i < activePartCount_; ++i) {
 		parts_[i].TransferMatrix();
+		//worldUpdater_.Update(parts_[i]);	
 	}
-	
 }
 
 void Particles::Draw() {
 	if (!isActive_ || isDead_ || !model_ || !camera_) return;
 	
 	for (size_t i = 0; i < activePartCount_; ++i) {
+
 		model_->Draw(parts_[i], *camera_, &objectColor_);
 	}
 }

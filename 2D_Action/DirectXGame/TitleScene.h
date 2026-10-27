@@ -23,6 +23,10 @@ private:
 	Request request_ = Request::None;
 	bool showGameOver_ = false;
 
+	uint32_t voiceBGM_ = 0;
+	uint32_t soundBGM_ = 0;
+	uint32_t levelStartSoundHandle_ = 0;
+
 	uint32_t titleSprite_ = 0;
 	Sprite* titleBackground_ = nullptr;
 

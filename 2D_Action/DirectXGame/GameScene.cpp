@@ -23,7 +23,15 @@ void GameScene::Initialize() {
 	AxisIndicator::GetInstance()->SetVisible(false);
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 
-
+	//jumpSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/jump.wav");
+	//hitSoundHandle_ = Audio::GetInstance()->LoadWave("sounds/hit.wav");
+	//enemyDefeatSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/hit.wav");
+	///airDashReadySoundHandle_ = Audio::GetInstance()->LoadWave("sounds/airdash_ready.wav");
+	//bounceSoundHandle_ = Audio::GetInstance()->LoadWave("sounds/bounce.wav");
+	//levelStartSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/levelStart.wav");
+	levelClearSoundHandle_ = Audio::GetInstance()->LoadWave("./Resources/sounds/clear.wav");
+	
+	//
 	skyDome_ = new Skydome();
 	skyDome_->Initialize();
 
@@ -37,6 +45,10 @@ void GameScene::Initialize() {
 	fade_->Initialize();
 	fade_->Start(Fade::Status::FadeIn, 1.0f);
 
+	playerHUD_ = new PlayerHUD();
+	playerHUD_->Initialize();
+
+
 	//player Initialize
 	player_ = new Player();
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 10);
@@ -49,20 +61,8 @@ void GameScene::Initialize() {
 	targetCamera_->SetTarget(player_);
 	targetCamera_->Reset();
 
-	//enemy Initialize
-	Enemy* enemy1 = new Enemy();
-	Vector3 enemy1Pos = mapChipField_->GetMapChipPositionByIndex(10, 10);
-	enemy1->Initialize(camera_, enemy1Pos, Enemy::EnemyType::Normal);
-	enemy1->SetMapChipField(mapChipField_);
-	enemies_.push_back(enemy1);
 
-	//Enemy* enemy2 = new Enemy();
-	//Vector3 enemy2Pos = mapChipField_->GetMapChipPositionByIndex(20, 10);
-	//enemy2->Initialize(camera_, enemy2Pos, Enemy::EnemyType::Shield);
-	//enemy2->SetMapChipField(mapChipField_);
-	//enemies_.push_back(enemy2);
-
-	//Block Initialize
+	// ===== Block & Slope Initialize =====
 	uint32_t numBlockVertical = mapChipField_->GetNumBlockVertical();
 	uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
 
@@ -70,108 +70,37 @@ void GameScene::Initialize() {
 	isVisible_.resize(numBlockVertical);
 
 	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		worldTransformBlocks_[i].resize(numBlockHorizontal);
+		worldTransformBlocks_[i].resize(numBlockHorizontal, nullptr);
 		isVisible_[i].resize(numBlockHorizontal, false);
 	}
 
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+	for (uint32_t y = 0; y < numBlockVertical; ++y) {
+		for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
 
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope1L) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+			MapChipType type = mapChipField_->GetMapChipTypeByIndex(x, y);
 
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope1R) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+			// Only create a WorldTransform for solid tiles
+			bool isSolid =
+				type == MapChipType::kBlock ||
+				type == MapChipType::kSlope1L ||
+				type == MapChipType::kSlope1R ||
+				type == MapChipType::kSlope2L ||
+				type == MapChipType::kSlope2R ||
+				type == MapChipType::kSlope3L ||
+				type == MapChipType::kSlope3R ||
+				type == MapChipType::kSlope4L ||
+				type == MapChipType::kSlope4R;
 
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
+			if (!isSolid) continue;
 
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope2L) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+			WorldTransform* wt = new WorldTransform();
+			wt->Initialize();
+			wt->scale_ = { 1.0f, 1.0f, 1.0f };
+			wt->rotation_ = { 0.0f, 0.0f, 0.0f };
+			wt->translation_ = mapChipField_->GetMapChipPositionByIndex(x, y);
 
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope2R) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
-
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
-
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope3L) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
-
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
-		}
-	}
-	for (uint32_t i = 0; i < numBlockVertical; ++i) {
-		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kSlope3R) {
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
-
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			}
+			worldTransformBlocks_[y][x] = wt;
+			isVisible_[y][x] = true;
 		}
 	}
 
@@ -183,6 +112,42 @@ void GameScene::Initialize() {
 	modelSlope3L_ = Model::CreateFromOBJ("slope3L", true);
 	modelSlope3R_ = Model::CreateFromOBJ("slope3R", true);
 
+
+	//enemy Initialize
+	for (uint32_t y = 0; y < numBlockVertical; ++y) {
+		for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
+
+			MapChipType type = mapChipField_->GetMapChipTypeByIndex(x, y);
+
+			if (type == MapChipType::kEnemy1) {
+				Enemy* enemy = new Enemy();
+				Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
+				enemy->Initialize(camera_, pos, Enemy::EnemyType::Normal);
+				enemy->SetMapChipField(mapChipField_);
+				enemies_.push_back(enemy);
+			}
+			else if (type == MapChipType::kEnemy2) {
+				Enemy* enemy = new Enemy();
+				Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
+				enemy->Initialize(camera_, pos, Enemy::EnemyType::Shield);
+				enemy->SetMapChipField(mapChipField_);
+				enemies_.push_back(enemy);
+			}
+		}
+	}
+
+	// ===== Goal =====
+	for (uint32_t y = 0; y < numBlockVertical; ++y) {
+		for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
+			if (mapChipField_->GetMapChipTypeByIndex(x, y) == MapChipType::kGoal) {
+				goal_ = new Goal();
+				Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
+				goal_->Initialize(pos);
+				// Only one goal expected
+				break;
+			}
+		}
+	}
 
 	//deathModel_ = Model::CreateFromOBJ("particle", true);
 	//deathParticles_ = new DeathParticles();
@@ -228,6 +193,7 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	skyDome_->Update(*camera_);
 	fireflySpawnTimer_ += 1.0f / 60.0f;
+	if (goal_) goal_->Update();
 
 	if (fireflySpawnTimer_ >= kFireflySpawnInterval && fireflies_.size() < kMaxFireflies) {
 		fireflySpawnTimer_ = 0.0f;
@@ -251,10 +217,11 @@ void GameScene::Update() {
 		fade_->Update();
 		//break;
 	case Phase::kPlay:
-
+		
 		targetCamera_->Update();
 		targetCamera_->SetPSpeed(player_->IsPSpeed());
 		
+		playerHUD_->Update(player_->GetPMeter(), player_->CanAirDash());
 		player_->Update();
 		
 	 
@@ -378,26 +345,75 @@ void GameScene::Draw() {
 		p->Draw();
 	}
 
+	if (goal_) goal_->Draw(*camera_);
+
 
 	Model::PostDraw();
 	if (fade_) fade_->Draw();
-	
+
+	Sprite::PreDraw();
+	if (playerHUD_) playerHUD_->Draw();
+	Sprite::PostDraw();
 }
 
 void GameScene::CheckAllCollisions() {
-	//for (Enemy* e : enemies_) {
-	//	if (e->IsDead() || e->IsCollisionDisabled()) continue;
-	//	if (WorldUpdater::IsCollisionAABB(player_->GetAABB(), e->GetAABB())) {
-	//		e->OnCollision(player_, this);
-	//	}
-	//}
+	if (!player_ || player_->IsDead()) return;
 
-#pragma region
-	//WorldUpdater::AABB aabb1; //aabb2, aabb3
-	//
-	//aabb1 = player_->GetAABB();
+	for (Enemy* e : enemies_) {
+		if (e->IsDead() || e->IsCollisionDisabled()) continue;
+		if (player_->IsInvincible()) continue;
 
-#pragma endregion
+		if (WorldUpdater::IsCollisionAABB(player_->GetAABB(), e->GetAABB())) {
+
+			// ===== 1. Player is dashing → existing attack logic =====
+			if (player_->IsAttack() && player_->attackPhase_ == Player::AttackPhase::kRush) {
+				e->OnCollision(player_, this);
+				continue;
+			}
+
+			// ===== 2. Stomp check (jump on enemy) =====
+			bool isStomping = false;
+
+			// Player is falling and is above the enemy
+			if (player_->GetVelocity().y < 0.0f) {
+				float playerBottom = player_->GetWorldPosition().y - 0.4f;
+				float enemyTop = e->GetWorldPosition().y + 0.3f;
+
+				if (playerBottom > enemyTop - 0.2f) {  // coming from above
+					isStomping = true;
+				}
+			}
+
+			if (isStomping) {
+				// Only Normal enemies can be stomped (Enemy1)
+				// Shielded enemies (Enemy2) still hurt the player
+				if (e->GetType() == Enemy::EnemyType::Normal) {
+					// Defeat the enemy
+					e->OnStomped(this); 
+
+					// Bounce the player up
+					player_->BounceFromStomp();
+				}
+				else {
+					// Shielded enemy → player takes damage
+					player_->OnDamaged(e->GetWorldPosition());
+				}
+			}
+			// ===== 3. Side collision → player takes damage =====
+			else {
+				player_->OnDamaged(e->GetWorldPosition());
+			}
+		}
+	}
+
+	// Goal collision (keep your existing code)
+	if (goal_ && phase_ == Phase::kPlay) {
+		if (WorldUpdater::IsCollisionAABB(player_->GetAABB(), goal_->GetAABB())) {
+			Audio::GetInstance()->PlayWave(levelClearSoundHandle_);
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
+		}
+	}
 }
 
 void GameScene::ChangePhase() {
@@ -406,6 +422,9 @@ void GameScene::ChangePhase() {
 		if (fade_ && fade_->IsFinished()) {
 			fade_->Stop();
 			phase_ = Phase::kPlay;
+
+			// Level start sound
+			Audio::GetInstance()->PlayWave(levelStartSoundHandle_);
 		}
 		break;
 	case Phase::kPlay:
@@ -426,6 +445,7 @@ void GameScene::ChangePhase() {
 	case Phase::kFadeOut:
 		if (fade_ && fade_->IsFinished()) {
 			finished_ = true;
+			isCleared_ = true;
 		}
 		break;
 	}
@@ -464,11 +484,15 @@ GameScene::~GameScene() {
 	//}
 	//enemies_.clear();
 
+	delete playerHUD_;
+
 	delete player_;
 	//player_ = nullptr;
 
 	delete targetCamera_;
 	//targetCamera_ = nullptr;
+
+	delete goal_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -506,6 +530,7 @@ GameScene::~GameScene() {
 	delete camera_;
 	//camera_ = nullptr;
 
-	
+	///delete levelStartSoundHandle_;
+	//delete levelClearSoundHandle_;
 	
 }
