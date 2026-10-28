@@ -35,7 +35,7 @@ private:
 
 	Player* target_ = nullptr;
 
-	Rect moveableArea_ = { 0.0, 100.0f, 0.0f, 100.0f };
+	Rect moveableArea_ = { 0.0, 400.0f, 0.0f, 400.0f };
 
 	//WorldUpdater* worldUpdater_;
 

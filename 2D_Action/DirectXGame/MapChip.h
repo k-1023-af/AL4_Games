@@ -22,7 +22,7 @@ enum class MapChipType {
 	kEnemy1,	// normal enemy
 	kEnemy2,	// shielded enemy
 
-	//kGoal,		// clear levels
+	kGoal,		// clear levels
 };
 
 struct MapChipData {
@@ -80,6 +80,6 @@ private:
 	static inline const float kBlockHeight_ = 2.0f;
 
 	static inline const uint32_t kNumBlockVertical_ = 20;
-	static inline const uint32_t kNumBlockHorizontal_ = 100;
+	static inline const uint32_t kNumBlockHorizontal_ = 300;
 };
 

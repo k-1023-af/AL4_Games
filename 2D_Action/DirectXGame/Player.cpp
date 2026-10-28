@@ -896,7 +896,7 @@ void Player::BehaviorUpdate() {
 		velocity_.y = 0.0f;
 		onGround_ = true;
 		canDash_ = true;
-		//canAirDash_ = true;
+		canAirDash_ = true;
 		velocity_.x *= (1.0f - kAttenuationLanding);
 	}
 	//===========================================================
@@ -1043,12 +1043,15 @@ void Player::BehaviorUpdate() {
 
 	}
 	if (onGround_ || info.onSlopeL || info.onSlopeR) {
-		canAirDash_ = false;
 		frameCount = 0.0f;
 		if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			DebugText::GetInstance()->ConsolePrintf("JUMP!!\n");
 			// Jump sound here
 			Audio::GetInstance()->PlayWave(jumpSoundHandle_);
+
+			canAirDash_ = false;
+			
+			frameCount++;
 
 			velocity_.y = kJumpAcceleration;
 			if (lrDirection_ == LRDirection::kLeft) {
@@ -1061,20 +1064,17 @@ void Player::BehaviorUpdate() {
 			frameCount = 0.0f;
 		}
 	}
-	else {
-		// In the air
-		if (behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_SPACE)) {
-			frameCount++;
+	if (!onGround_ && behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_SPACE)) {
+		frameCount++;
 
-			// After a short delay, allow air dash if we have P-Speed
-			if (frameCount >= 2.0f && isPSpeed_ && canDash_) {
-				canAirDash_ = true;
+		// After a short delay, allow air dash if we have P-Speed
+		if (frameCount >= 2.0f && isPSpeed_ && canDash_) {
+			canAirDash_ = true;
 
-				// Play the ready sound only once
-				if (!hasPlayedAirDashReadySound_) {
-					Audio::GetInstance()->PlayWave(airDashReadySoundHandle_);
-					hasPlayedAirDashReadySound_ = true;
-				}
+			// Play the ready sound only once
+			if (!hasPlayedAirDashReadySound_) {
+				Audio::GetInstance()->PlayWave(airDashReadySoundHandle_);
+				hasPlayedAirDashReadySound_ = true;
 			}
 		}
 	}
@@ -1146,7 +1146,7 @@ void Player::BehaviorUpdate() {
 		velocity_.y = 0;
 		onGround_ = true;
 		canDash_ = true;
-		canAirDash_ = false;
+		//canAirDash_ = false;
 		hasPlayedAirDashReadySound_ = false;
 		frameCount = 0.0f;
 

@@ -81,10 +81,13 @@ private:
 	Player* player_ = nullptr;
 	CameraController* targetCamera_ = nullptr;
 	Goal* goal_ = nullptr;
+	Goal* goal2_ = nullptr;
 
 	std::list<Enemy*> enemies_;
 	std::list<Particles*> hitEffects_;
 	std::list<Particles*> fireflies_;
+	std::list <Goal*> goals_;
+
 	float fireflySpawnTimer_ = 0.0f;
 	const float kFireflySpawnInterval = 0.12f;   // spawn every ~7 frames
 	const int   kMaxFireflies = 45;

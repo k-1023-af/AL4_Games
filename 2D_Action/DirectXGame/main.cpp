@@ -27,7 +27,7 @@ void DrawScene();
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
-	KamataEngine::Initialize(L"LE2C_25_ファルコン_エブラハム_GameTitle");
+	KamataEngine::Initialize(L"LE2C_25_ファルコン_エブラハム_ハイパーアクセル");
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 

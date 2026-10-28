@@ -136,18 +136,18 @@ private:
 	MapChip* mapChipField_ = nullptr;
 
 	static inline const float kAttenuation			= 0.015f;
-	static inline const float kAttenuationLanding	= 0.0055f;
+	static inline const float kAttenuationLanding	= 0.006f;
 	static inline const float kLimitRunSpeed		= 0.15f;
 	static inline const float kLimitFallSpeed		= 0.2f;
 	static inline const float kBoostAcceleration	= 0.00325f;
-	static inline const float kRunAcceleration		= 0.0028f;
+	static inline const float kRunAcceleration		= 0.0029f;
 	static inline const float kAcceleration			= 0.0026f;
 	static inline const float kJumpAcceleration		= 0.95f;
 	static inline const float kGravityAcceleration	= 0.1f;
 
 	static inline const float kLimitPSpeed		= 4.2f;
-	static inline const float kPMeterFillRate	= 0.012f;
-	static inline const float kPMeterDrainRate	= 0.008f;
+	static inline const float kPMeterFillRate	= 0.014f;
+	static inline const float kPMeterDrainRate	= 0.006f;
 	static inline const float kPSpeedDuration	= 180.0f;
 	static inline const float kPSpeedThreshold	= 0.98f;
 	static inline const float kBoostThreshold = kPSpeedThreshold * 2.0f;

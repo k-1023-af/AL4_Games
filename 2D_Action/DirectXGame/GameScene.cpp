@@ -51,7 +51,7 @@ void GameScene::Initialize() {
 
 	//player Initialize
 	player_ = new Player();
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(5, 10);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(4, 14);
 	player_->Initialize(camera_, playerPosition);
 	player_->SetMapChipField(mapChipField_);
 
@@ -140,21 +140,28 @@ void GameScene::Initialize() {
 	//for (uint32_t y = 0; y < numBlockVertical; ++y) {
 	//	for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
 	//		if (mapChipField_->GetMapChipTypeByIndex(x, y) == MapChipType::kGoal) {
-	//			goal_ = new Goal();
+	//			Goal* goal = new Goal();
 	//			Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
-	//			goal_->Initialize(pos);
-	//			// Only one goal expected
-	//			break;
+	//			goal->Initialize(pos);
+	//			goals_.push_back(goal);
 	//		}
 	//	}
 	//}
 
-	//const uint32_t goalX = 10;   // example: near the end of the stage
-	//const uint32_t goalY = 15;   // example: middle height
-	//
-	//goal_ = new Goal();
-	//Vector3 pos = mapChipField_->GetMapChipPositionByIndex(goalX, goalY);
-	//goal_->Initialize(pos);
+	const uint32_t goalX = 78;   // example: near the end of the stage
+	const uint32_t goalY = 15;   // example: middle height
+	
+	goal_ = new Goal();
+	Vector3 pos = mapChipField_->GetMapChipPositionByIndex(goalX, goalY);
+	goal_->Initialize(pos);
+
+
+	const uint32_t goal2X = 40;   // example: near the end of the stage
+	const uint32_t goal2Y = 7;   // example: middle height
+
+	goal2_ = new Goal();
+	Vector3 pos2 = mapChipField_->GetMapChipPositionByIndex(goal2X, goal2Y);
+	goal2_->Initialize(pos2);
 
 
 
@@ -203,6 +210,7 @@ void GameScene::Update() {
 	skyDome_->Update(*camera_);
 	fireflySpawnTimer_ += 1.0f / 60.0f;
 	if (goal_) goal_->Update();
+	if (goal2_) goal2_->Update();
 
 	if (fireflySpawnTimer_ >= kFireflySpawnInterval && fireflies_.size() < kMaxFireflies) {
 		fireflySpawnTimer_ = 0.0f;
@@ -259,6 +267,11 @@ void GameScene::Update() {
 			}
 			else {
 				++it;
+			}
+		}
+		for (Goal* g : goals_) {
+			if (g->IsActive()) {
+				g->Update();
 			}
 		}
 
@@ -355,7 +368,10 @@ void GameScene::Draw() {
 	}
 
 	if (goal_) goal_->Draw(*camera_);
-
+	if (goal2_) goal2_->Draw(*camera_);
+	//for (Goal* g : goals_) {
+	//	g->Draw(*camera_);
+	//}
 
 	Model::PostDraw();
 	if (fade_) fade_->Draw();
