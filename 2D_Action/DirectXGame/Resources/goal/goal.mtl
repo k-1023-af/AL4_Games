@@ -1,7 +1,7 @@
 # Blender 5.1.1 MTL File: '2DActionModels.blend'
 # www.blender.org
 
-newmtl Material.012
+newmtl Material.014
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -9,4 +9,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd C:/Users/takes/Documents/goal post UV.png
+map_Kd goal_post_UV.png

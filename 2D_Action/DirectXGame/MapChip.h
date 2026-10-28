@@ -22,7 +22,7 @@ enum class MapChipType {
 	kEnemy1,	// normal enemy
 	kEnemy2,	// shielded enemy
 
-	kGoal,		// clear levels
+	//kGoal,		// clear levels
 };
 
 struct MapChipData {

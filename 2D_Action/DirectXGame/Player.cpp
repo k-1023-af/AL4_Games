@@ -69,6 +69,7 @@ void Player::Initialize(Camera* camera, const Vector3& position) {
 	attackParameter_ = 0;
 	isAiming_ = false;
 	canAirDash_ = false;
+	hasPlayedAirDashReadySound_ = false;
 }
 
 void Player::Update() {
@@ -299,8 +300,8 @@ void Player::OnDamaged(const Vector3& hitPos) {
 	// Knockback direction (away from enemy)
 	float dir = (playerTransform_.translation_.x > hitPos.x) ? 1.0f : -1.0f;
 
-	velocity_.x = dir * 0.35f;   // horizontal knockback
-	velocity_.y = 0.25f;         // small upward boost
+	velocity_.x = dir * 0.2f;   // horizontal knockback
+	velocity_.y = 0.45f;         // small upward boost
 
 	// Start invincibility
 	isInvincible_ = true;
@@ -945,11 +946,11 @@ void Player::BehaviorUpdate() {
 	if (!hittingWall) {
 		if (lrDirection_ == LRDirection::kRight) {
 			// Running right → need high positive speed
-			atFullRunSpeed = velocity_.x >= (kLimitRunSpeed * 0.90f);
+			atFullRunSpeed = velocity_.x >= (kLimitRunSpeed * 0.8f);
 		}
 		else if (lrDirection_ == LRDirection::kLeft) {
 			// Running left → need high negative speed
-			atFullRunSpeed = velocity_.x <= -(kLimitRunSpeed * 0.90f);
+			atFullRunSpeed = velocity_.x <= -(kLimitRunSpeed * 0.80f);
 		}
 	}
 
@@ -959,26 +960,33 @@ void Player::BehaviorUpdate() {
 	else {
 		// Drain faster against walls
 		float drain = hittingWall ? kPMeterDrainRate * 2.5f
-			: (std::abs(velocity_.x) > 0.5f ? kPMeterDrainRate * 0.6f
-				: kPMeterDrainRate);
+			: kPMeterDrainRate;
+
 		pMeter_ = (std::max)(0.0f, pMeter_ - drain);
 	}
 
-	if (pMeter_ >= kBoostThreshold) {
-		isBoost_ = true;
-		isPSpeed_ = true;          // Boost implies P-Speed
-		pSpeedTimer_ = kPSpeedDuration;
-	}
-	if (pMeter_ >= kPSpeedThreshold) {
-		isBoost_ = false;
+	// ----- Activate / Deactivate P-Speed -----
+	const float kActivateThreshold = 0.85f;   // need almost full to activate
+	const float kDeactivateThreshold = 0.15f; // turn off when it gets low
+
+	if (!isPSpeed_ && pMeter_ >= kActivateThreshold) {
+		// Just reached the threshold → turn on
 		isPSpeed_ = true;
+		isBoost_ = (pMeter_ >= 1.8f);   // optional boost state
 		pSpeedTimer_ = kPSpeedDuration;
 	}
 	else if (isPSpeed_) {
+		// Already active → keep draining the timer and the meter
 		pSpeedTimer_ -= 1.0f;
-		if (pSpeedTimer_ <= 0.0f) {
+
+		// Force drain while active so it can't stay on forever
+		pMeter_ = (std::max)(0.0f, pMeter_ - kPMeterDrainRate * 0.6f);
+
+		if (pSpeedTimer_ <= 0.0f || pMeter_ <= kDeactivateThreshold) {
 			isPSpeed_ = false;
-			pMeter_ = 0.4f;
+			isBoost_ = false;
+			// Optional: leave a little bit of meter
+			// pMeter_ = 0.2f;
 		}
 	}
 
@@ -1054,13 +1062,19 @@ void Player::BehaviorUpdate() {
 		}
 	}
 	else {
+		// In the air
 		if (behavior_ == Behavior::kRoot && !Input::GetInstance()->PushKey(DIK_SPACE)) {
 			frameCount++;
-			if (frameCount >= 2.0f) {
-				if (!canAirDash_ && isPSpeed_) {
+
+			// After a short delay, allow air dash if we have P-Speed
+			if (frameCount >= 2.0f && isPSpeed_ && canDash_) {
+				canAirDash_ = true;
+
+				// Play the ready sound only once
+				if (!hasPlayedAirDashReadySound_) {
 					Audio::GetInstance()->PlayWave(airDashReadySoundHandle_);
+					hasPlayedAirDashReadySound_ = true;
 				}
-				canAirDash_ = isPSpeed_;
 			}
 		}
 	}
@@ -1133,6 +1147,8 @@ void Player::BehaviorUpdate() {
 		onGround_ = true;
 		canDash_ = true;
 		canAirDash_ = false;
+		hasPlayedAirDashReadySound_ = false;
+		frameCount = 0.0f;
 
 		DebugText::GetInstance()->ConsolePrintf("landing\n");
 	}

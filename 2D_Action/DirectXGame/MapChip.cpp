@@ -21,7 +21,7 @@ namespace {
         {"E1", MapChipType::kEnemy1},	// Normal
         {"E2", MapChipType::kEnemy2},	// Shielded
 
-        {"G",  MapChipType::kGoal},
+        //{"G",  MapChipType::kGoal},
     };
 }
 

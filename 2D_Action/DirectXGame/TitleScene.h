@@ -15,6 +15,8 @@ public:
 	void ClearRequest() override { request_ = Request::None; }
 
 	void SetShowGameOver(bool v) { showGameOver_ = v; }
+	void PlayBGM();
+	void StopBGM();
 
 	TitleScene();
 	~TitleScene();

@@ -8,28 +8,35 @@
 
 using namespace KamataEngine;
 
-
+GameScene* gameScene = nullptr;
+TitleScene* titleScene = nullptr;
 
 enum class SceneId {
-	Title,
-	Game,
-	Clear,
-
+	kUnknown = 0,
+	kTitle,
+	kGame,
+	kClear,
 };
+SceneId scene = SceneId::kUnknown;
 
-// Windowsアプリでのエントリーポイント(main関数)
+void ChangeScene();
+
+void UpdateScene();
+
+void DrawScene();
+
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	
+
 	KamataEngine::Initialize(L"LE2C_25_ファルコン_エブラハム_GameTitle");
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	TitleScene* titleScene = new TitleScene();
-	GameScene* gameScene = new GameScene();
+	//TitleScene* titleScene = new TitleScene();
+	//GameScene* gameScene = nullptr;
 
+	titleScene = new TitleScene();
 	titleScene->Initialize();
-	SceneId current = SceneId::Title;
-
+	scene = SceneId::kTitle;
 
 	while (true) {
 
@@ -38,85 +45,118 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		}
 
 		ImGuiManager* imguiManager = ImGuiManager::GetInstance();
-
 		imguiManager->Begin();
 
-		//-------update current scene---------
-
-		if (current == SceneId::Title) {
-			titleScene->Update();
-
-
-			if (titleScene->GetRequest() == IScene::Request::GoToGame) {
-				titleScene->ClearRequest();
-
-				delete gameScene;
-				gameScene = new GameScene();
-				gameScene->Initialize(); // fresh game / retry
-				current = SceneId::Game;
-
-				//Audio::GetInstance()->PlayWave(soundBGM_, true, 0.8f);
-			}
-		}
-		else if (current == SceneId::Game) {
-			if (Input::GetInstance()->TriggerKey(DIK_R)) {
-				gameScene->IsFinished();
-				current = SceneId::Title;
-			}
-
-			gameScene->Update();
-
-			if (gameScene->IsFinished()) {
-				//if (gameScene->IsCleared()) {
-				//	current = SceneId::Clear;
-				//
-				//}
-				//else {
-					gameScene->ClearFinished();
-					titleScene->SetShowGameOver(true);
-
-					delete gameScene;
-					gameScene = nullptr;
-
-					current = SceneId::Title;
-				//}
-
-			}
-		}
+		ChangeScene();
+		UpdateScene();
 
 		imguiManager->End();
 
-		/// 描画開始
-
+		///描画開始
 		dxCommon->PreDraw();
 
 		/// ゲームシーンの描画
 
-		if (current == SceneId::Title) {
-			titleScene->Draw();
-		}
-		else if (current == SceneId::Game && gameScene) {
-			gameScene->Draw();
-		}
-
-		/// 軸表示の描画
-
+		DrawScene();
 		AxisIndicator::GetInstance()->Draw();
 
-		/// ImGuiの描画
-		imguiManager->Draw();
-
 		/// 描画終了
-
 		dxCommon->PostDraw();
 
+		//
 		/// 解放処理
+		//
 	}
 
 	delete gameScene;
 	delete titleScene;
-	gameScene = nullptr;
 
 	KamataEngine::Finalize();
+
 	return 0;
+}
+
+void ChangeScene() {
+
+	switch (scene) {
+	case SceneId::kTitle:
+		//titleScene->Update();
+
+		if (titleScene->GetRequest() == IScene::Request::GoToGame) {
+			titleScene->ClearRequest();
+			titleScene->StopBGM();
+			
+
+			// Create a fresh GameScene
+			delete gameScene;
+			gameScene = new GameScene();
+			gameScene->Initialize();
+			scene = SceneId::kGame;
+			
+		}
+		break;
+
+	case SceneId::kGame:
+		//gameScene->Update();
+
+		// Manual retry with R
+		if (Input::GetInstance()->TriggerKey(DIK_P)) {
+			
+			//titleScene->StopBGM();
+			gameScene->IsFinished();
+
+			//delete gameScene;
+			//gameScene = nullptr;
+			//
+			//titleScene = new TitleScene();
+			//titleScene->Initialize();
+			//scene = SceneId::kTitle;
+			
+			
+		}
+
+		// Finished (clear or death)
+		if (gameScene->IsFinished()) {
+			bool cleared = gameScene->IsCleared();
+
+			delete gameScene;
+			gameScene = nullptr;
+
+			if (cleared) {
+				titleScene->SetShowGameOver(false);	// Stage Clear
+			}
+			else {
+				titleScene->SetShowGameOver(true);	// Game Over
+			}
+
+			// Return to title and play BGM
+			titleScene->PlayBGM();
+			scene = SceneId::kTitle;
+		}
+		break;
+	}
+}
+
+void UpdateScene() {
+	switch (scene) {
+	case SceneId::kTitle:
+		titleScene->Update();
+		break;
+
+	case SceneId::kGame:
+		gameScene->Update();
+		break;
+	}
+}
+
+void DrawScene() {
+	switch (scene) {
+	case SceneId::kTitle:
+		titleScene->Draw();
+		break;
+
+	case SceneId::kGame:
+		gameScene->Draw();
+		break;
+	}
 }

@@ -38,7 +38,7 @@ void GameScene::Initialize() {
 	//set map chip resources
 	mapChipField_ = new MapChip();
 	mapChipField_->ResetMapChipData();
-	mapChipField_->LoadMapChipCSV("Resources/blocks_test.csv");
+	mapChipField_->LoadMapChipCSV("Resources/stage1.csv");
 
 	// Fade status
 	fade_ = new Fade();
@@ -51,7 +51,7 @@ void GameScene::Initialize() {
 
 	//player Initialize
 	player_ = new Player();
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 10);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(5, 10);
 	player_->Initialize(camera_, playerPosition);
 	player_->SetMapChipField(mapChipField_);
 
@@ -136,18 +136,27 @@ void GameScene::Initialize() {
 		}
 	}
 
-	// ===== Goal =====
-	for (uint32_t y = 0; y < numBlockVertical; ++y) {
-		for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
-			if (mapChipField_->GetMapChipTypeByIndex(x, y) == MapChipType::kGoal) {
-				goal_ = new Goal();
-				Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
-				goal_->Initialize(pos);
-				// Only one goal expected
-				break;
-			}
-		}
-	}
+	//// ===== Goal =====
+	//for (uint32_t y = 0; y < numBlockVertical; ++y) {
+	//	for (uint32_t x = 0; x < numBlockHorizontal; ++x) {
+	//		if (mapChipField_->GetMapChipTypeByIndex(x, y) == MapChipType::kGoal) {
+	//			goal_ = new Goal();
+	//			Vector3 pos = mapChipField_->GetMapChipPositionByIndex(x, y);
+	//			goal_->Initialize(pos);
+	//			// Only one goal expected
+	//			break;
+	//		}
+	//	}
+	//}
+
+	//const uint32_t goalX = 10;   // example: near the end of the stage
+	//const uint32_t goalY = 15;   // example: middle height
+	//
+	//goal_ = new Goal();
+	//Vector3 pos = mapChipField_->GetMapChipPositionByIndex(goalX, goalY);
+	//goal_->Initialize(pos);
+
+
 
 	//deathModel_ = Model::CreateFromOBJ("particle", true);
 	//deathParticles_ = new DeathParticles();
