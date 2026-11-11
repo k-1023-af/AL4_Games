@@ -320,3 +320,8 @@ bool isCollisionAABB(const AABB& a, const AABB& b) {
 	}
 	return false;
 }
+
+//AABB GetAABB() {
+//	AABB aabb;
+//	return aabb;
+//}

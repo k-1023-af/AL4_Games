@@ -4,14 +4,7 @@ WorldUpdate::WorldUpdate() {}
 
 WorldUpdate::~WorldUpdate() {}
 
-void WorldUpdate::Initialize() {
-	//worldTransform_ = new WorldTransform();
-	//worldTransform_->Initialize();
-	//worldTransform_->scale_ = {1.0f, 1.0f, 1.0f};
-	//worldTransform_->rotation_ = {0.0f, 0.0f, 0.0f};
-	//worldTransform_->translation_ = {0.0f, 0.0f, 0.0f};
-}
-
-void WorldUpdate::Update(KamataEngine::WorldTransform& worldTransform) {
-	WorldTransformUpdate(worldTransform);
+void WorldUpdate::Update(KamataEngine::WorldTransform& wt) {
+	wt.matWorld_ = MakeAffineMatrix(wt.scale_, wt.rotation_, wt.translation_);
+	wt.TransferMatrix();
 }
