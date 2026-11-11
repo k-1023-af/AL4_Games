@@ -1,0 +1,8 @@
+﻿  Player3D.cpp
+C:\Users\takes\Documents\AL4_Games\3D_Shooting\DirectXGame\Player3D.h(58,40): error C2280: 'KamataEngine::WorldTransform::WorldTransform(const KamataEngine::WorldTransform &)': 削除された関数を参照しようとしています
+  (ソース ファイル 'Player3D.cpp' をコンパイルしています)
+      C:\Users\takes\Documents\AL4_Games\3D_Shooting\External\KamataEngine\include\3d\WorldTransform.h(56,2):
+      'KamataEngine::WorldTransform::WorldTransform' の宣言を確認してください
+      C:\Users\takes\Documents\AL4_Games\3D_Shooting\External\KamataEngine\include\3d\WorldTransform.h(56,2):
+      'KamataEngine::WorldTransform::WorldTransform(const KamataEngine::WorldTransform &)': 関数は明示的に削除されました
+  

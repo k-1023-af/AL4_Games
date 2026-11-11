@@ -55,10 +55,9 @@ Matrix4x4 MakeTranslation(const Vector3& translation);
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotation, const Vector3& translation);
 
 
-bool isCollisionAABB(const AABB& a, const AABB& b);
+static bool isCollisionAABB(const AABB& a, const AABB& b);
+//AABB GetAABB();
 
-
-
-inline float RandomFloat(float min, float max) {
-	return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
-}
+//inline float RandomFloat(float min, float max) {
+//	return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
+//}
