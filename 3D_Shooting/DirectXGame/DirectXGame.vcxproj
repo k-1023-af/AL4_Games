@@ -178,7 +178,21 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CameraController.cpp" />
+    <ClCompile Include="Enemy3D.cpp" />
+    <ClCompile Include="Formula.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MapChip3D.cpp" />
+    <ClCompile Include="Player3D.cpp" />
+    <ClCompile Include="WorldUpdate.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CameraController.h" />
+    <ClInclude Include="Enemy3D.h" />
+    <ClInclude Include="Formula.h" />
+    <ClInclude Include="MapChip3D.h" />
+    <ClInclude Include="Player3D.h" />
+    <ClInclude Include="WorldUpdate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
