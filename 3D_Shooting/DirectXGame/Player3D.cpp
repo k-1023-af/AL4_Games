@@ -2,22 +2,36 @@
 #include "MapChip3D.h"
 #include "Enemy3D.h"
 
+Player3D::Player3D() { }
+
+Player3D::~Player3D() { }
+
 void Player3D::Initialize(Camera* camera, const Vector3& position)
 {
+	//==============================================================================
+	//  Camera
+	//==============================================================================
 	camera_ = camera;
 
+	//==============================================================================
+	//  Player Transform + Models
+	//==============================================================================
 	playerTransform_.Initialize();
 	playerTransform_.translation_ = position;
 
-
-	//playerModel_ = Model::CreateFromOBJ("player", true);
+	playerModel_ = Model::CreateFromOBJ("player", true);
 	//modelAttack_ = Model::CreateFromOBJ("attack", true);
 	//wtAttack_.Initialize();
 
+	//==============================================================================
+	//  Color
+	//==============================================================================
 	objectColor_.Initialize();
 	objectColor_.SetColor(normalColor_);
 
-	// Initial behavior
+	//==============================================================================
+	//  Initial Behavior
+	//==============================================================================
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 	lookDirection_ = LookDirection::kDown;
 
@@ -27,7 +41,58 @@ void Player3D::Initialize(Camera* camera, const Vector3& position)
 
 void Player3D::Update()
 {
+	//==============================================================================
+	//  World Transform + Initial checks
+	//==============================================================================
+	worldUpdater_.Update(playerTransform_);
 
+	CollisionMapInfo info;
+	info.move = velocity_;
+	objectColor_.SetColor(currentColor_);
+
+	//==============================================================================
+	//  Floor Check
+	//==============================================================================
+	if (playerTransform_.translation_.y <= 1.0f) {
+		playerTransform_.translation_.y = 1.0f;
+		velocity_.y = 0.0f;
+		//onGround_ = true;
+		//canDash_ = true;
+		//canAirDash_ = true;
+		//velocity_.x *= (1.0f - kAttenuationLanding);
+	}
+
+	//==============================================================================
+	//	  [1] movement input	 
+	//==============================================================================
+	if (Input::GetInstance()->PushKey(DIK_W)) {
+		velocity_.z += kAcceleration;
+	}
+
+	if (Input::GetInstance()->PushKey(DIK_S)) {
+		velocity_.z -= kAcceleration;
+	}
+
+	if (Input::GetInstance()->PushKey(DIK_D)) {
+		velocity_.x += kAcceleration;
+		//if (lrDirection_ != LRDirection::kRight) {
+		//	lrDirection_ = LRDirection::kRight;
+		//	turnFirstRotationY_ = playerTransform_.rotation_.y;
+		//	turnTimer_ = kTimeTurn;
+		//}
+	}
+	if (Input::GetInstance()->PushKey(DIK_A)) {
+		velocity_.x -= kAcceleration;
+		//if (lrDirection_ != LRDirection::kLeft) {
+		//	lrDirection_ = LRDirection::kLeft;
+		//	turnFirstRotationY_ = playerTransform_.rotation_.y;
+		//	turnTimer_ = kTimeTurn;
+		//}
+	}
+
+	//==============================================================================
+	//  Phase Update
+	//==============================================================================
 
 }
 
@@ -36,46 +101,59 @@ void Player3D::Draw()
 	if (isDead_) return;
 
 	playerTransform_.TransferMatrix();
-	//playerModel_->Draw(playerTransform_, *camera_, &objectColor_);
 
-	//===============================================================
+	//==============================================================================
+	//  Player Models
+	//==============================================================================
+	 
+	playerModel_->Draw(playerTransform_, *camera_, &objectColor_);
 
-	if (isAiming_) {
-		Vector3 start = playerTransform_.translation_;
-		start.y += 0.3f;
+	//==============================================================================
+	//  Aiming Reticle
+	//==============================================================================
 
-		// Full-length faint guide
-		Vector3 fullEnd = Add(start, MultiplyByS(aimDirection_, kArrowLength));
-		PrimitiveDrawer::GetInstance()->DrawLine3d(
-			start, fullEnd, { 0.4f, 0.4f, 0.4f, 0.6f });   // grey guide
+	//if (isAiming_) {
+	//	Vector3 start = playerTransform_.translation_;
+	//	start.y += 0.3f;
+	//
+	//	// Full-length faint guide
+	//	Vector3 fullEnd = Add(start, Multiply(aimDirection_, kArrowLength));
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(
+	//		start, fullEnd, { 0.4f, 0.4f, 0.4f, 0.6f });   // grey guide
+	//
+	//	// Charge fill (grows with chargePower_)
+	//	float chargeT = std::clamp(chargePower_, 0.0f, 1.0f);
+	//	Vector3 chargeEnd = Add(start, Multiply(aimDirection_, kArrowLength * chargeT));
+	//
+	//	// Color goes from yellow → orange → red as it charges
+	//	Vector4 chargeColor = {
+	//		1.0f,
+	//		1.0f - chargeT * 0.7f,   // green channel decreases
+	//		0.15f,
+	//		1.0f
+	//	};
+	//
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(start, chargeEnd, chargeColor);
+	//
+	//	// Arrow head at the tip of the charge line (or full line – your choice)
+	//	Vector3 side = { -aimDirection_.y, aimDirection_.x, 0.0f };
+	//	side = Multiply(side, 0.35f);
+	//
+	//	Vector3 back = Multiply(aimDirection_, 0.55f);
+	//	Vector3 headBase = Subtract(chargeEnd, back);   // tip of the charged part
+	//
+	//	Vector3 head1 = Add(headBase, side);
+	//	Vector3 head2 = Subtract(headBase, side);
+	//
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head1, chargeColor);
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head2, chargeColor);
+	//}
 
-		// Charge fill (grows with chargePower_)
-		float chargeT = std::clamp(chargePower_, 0.0f, 1.0f);
-		Vector3 chargeEnd = Add(start, MultiplyByS(aimDirection_, kArrowLength * chargeT));
+	//==============================================================================
+	//  Player Attack
+	//==============================================================================
 
-		// Color goes from yellow → orange → red as it charges
-		Vector4 chargeColor = {
-			1.0f,
-			1.0f - chargeT * 0.7f,   // green channel decreases
-			0.15f,
-			1.0f
-		};
 
-		PrimitiveDrawer::GetInstance()->DrawLine3d(start, chargeEnd, chargeColor);
-
-		// Arrow head at the tip of the charge line (or full line – your choice)
-		Vector3 side = { -aimDirection_.y, aimDirection_.x, 0.0f };
-		side = MultiplyByS(side, 0.35f);
-
-		Vector3 back = MultiplyByS(aimDirection_, 0.55f);
-		Vector3 headBase = Subtract(chargeEnd, back);   // tip of the charged part
-
-		Vector3 head1 = Add(headBase, side);
-		Vector3 head2 = Subtract(headBase, side);
-
-		PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head1, chargeColor);
-		PrimitiveDrawer::GetInstance()->DrawLine3d(chargeEnd, head2, chargeColor);
-	}
 
 }
 
@@ -136,11 +214,11 @@ void Player3D::SetMapChipField(MapChip3D* mapChipField)
 
 void Player3D::EnemyCollision(Enemy3D* enemy)
 {
-	//if (IsAttack()) { return; }
+	if (IsAttack()) { return; }
 
 	DebugText::GetInstance()->ConsolePrintf("HIT!\n");
 	(void)enemy;
-	//playerTransform_.translation_.y += 2.0f;
+	playerTransform_.translation_.y += 2.0f;
 	isDead_ = true;
 }
 

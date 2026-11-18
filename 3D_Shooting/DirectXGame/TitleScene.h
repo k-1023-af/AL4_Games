@@ -1,25 +1,45 @@
 #pragma once
-#include "IScene.h"
+//#include "IScene.h"
 #include "KamataEngine.h"
+#include "Fade.h"
+#include "WorldUpdate.h"
 
 using namespace KamataEngine;
 
-class TitleScene : public IScene {
+class TitleScene /*: public IScene*/ {
 public:
-	void Initialize() override;
-	void Update() override;
-	void Draw() override;
+	void Initialize();
+	void Update();
+	void Draw();
 
-	Request GetRequest() const override { return request_; }
+	//Request GetRequest() const override { return request_; }
 
-	void ClearRequest() override { request_ = Request::None; }
-	void SetShowGameover(bool v) { showGameOver_ = v; }
+	//void ClearRequest() override { request_ = Request::None; }
+	//void SetShowGameover(bool v) { showGameOver_ = v; }
 
+	TitleScene();
 	~TitleScene();
 
+	enum class Phase {
+		kFadeIn,
+		kMain,
+		kFadeOut,
+	};
+
+	bool IsFinished() const { return isFinished_; }
+
 private:
-	Request request_ = Request::None;
-	bool showGameOver_ = false;
+	Phase phase_ = Phase::kFadeIn;
+
+	Camera camera_;
+
+
+	Fade* fade_ = nullptr;
+
+	bool isFinished_ = false;
+
+	//Request request_ = Request::None;
+	//bool showGameOver_ = false;
 
 	// Resource related
 

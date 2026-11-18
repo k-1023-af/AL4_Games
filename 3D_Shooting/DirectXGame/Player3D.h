@@ -45,9 +45,9 @@ public:
 	void Update();
 	void Draw();
 
-	//////////////////////////////////////////////////
+	//==============================================================================
 	//  Getters
-	//////////////////////////////////////////////////
+	//==============================================================================
 	AABB GetAABB();
 	Vector3 GetCornerPosition(const Vector3& center, Corner corner);
 	Vector3 GetWorldPosition();
@@ -59,8 +59,11 @@ public:
 	const Vector3& GetVelocity() const { return velocity_; }
 
 	bool IsDead() const { return isDead_; }
-	//bool IsAttack() const { return isAttack_; }
+	bool IsAttack() const { return isAttack_; }
 
+	//==============================================================================
+	//  Helper Functions
+	//==============================================================================
 	void SetMapChipField(MapChip3D* mapChipField);
 	void MapCollisionX(CollisionMapInfo& info);
 	void MapCollisionY(CollisionMapInfo& info);
@@ -71,41 +74,65 @@ public:
 	//void BehaviorAttackInitialize();
 	//void BehaviorAttackUpdate();
 
+	//==============================================================================
+	//  Variables
+	//==============================================================================
+
 	LookDirection lookDirection_ = LookDirection::kDown;
 
 	Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
 	//Vector3 acceleration_ = { 0.0f, kGravityAcceleration, 0.0f };
 
 private:
+	//==============================================================================
+	//  Entities
+	//==============================================================================
 	WorldUpdate worldUpdater_;
+	MapChip3D* mapChipField_ = nullptr;
+	Camera* camera_ = nullptr;
 	WorldTransform playerTransform_;
 	WorldTransform wtAttack_;
 
-	// Body Transforms + Models
-	
+	//==============================================================================
+	//  Body Transforms + Models
+	//==============================================================================
+	Model* playerModel_ = nullptr;
 	Model* modelAttack_ = nullptr;
 
+	//==============================================================================
+	//  Color
+	//==============================================================================
 	ObjectColor objectColor_;
 	Vector4 currentColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Vector4 normalColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Vector4 aimColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	Camera* camera_ = nullptr;
-	MapChip3D* mapChipField_ = nullptr;
+	//==============================================================================
+	//  Constants
+	//==============================================================================
+	static inline const float kAcceleration = 0.001f;
 
-//----------------------------------------------
 	static inline const float kWidth = 0.8f;
 	static inline const float kHeight = 0.8f;
 	static inline const float kBlank = { 0.01f };
-//-----------------------------------------------
+
+	static inline const float kArrowLength = 2.8f;
+
+	//==============================================================================
+	//  Flags
+	//==============================================================================
 	bool isDead_ = false;
 	bool isAttack_ = false;
 	bool isInvincible_ = false;
 	bool isAiming_ = false;
 
+	//==============================================================================
+	//  Variables
+	//==============================================================================
+
 	float invincibleTimer_ = 0.0f;
 
 	Vector3 aimDirection_ = { 0.0f, 0.0f, -1.0f };
-	static inline const float kArrowLength = 2.8f;
+	
 };
 

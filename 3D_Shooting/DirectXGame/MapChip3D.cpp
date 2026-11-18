@@ -12,6 +12,10 @@ namespace {
 	};
 }
 
+MapChip3D::MapChip3D() {}
+
+MapChip3D::~MapChip3D() { }
+
 MapChip3D::Rect MapChip3D::GetRectByIndex(uint32_t xIndex, uint32_t zIndex)
 {
 	Rect rect = {};
