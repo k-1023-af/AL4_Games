@@ -26,7 +26,9 @@ public:
 		float left;  
 		float right; 
 		float front; 
-		float back; 
+		float back;
+		//float top;
+		//float bottom;
 	};
 
 	struct IndexSet {

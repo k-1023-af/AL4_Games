@@ -36,18 +36,6 @@ void GameScene::Initialize()
 	phase_ = Phase::kFadeIn;
 
 	//==============================================================================
-	//  Player
-	//==============================================================================
-	player_ = new Player3D();
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 10);
-	player_->Initialize(camera_, playerPosition);
-	player_->SetMapChipField(mapChipField_);
-
-	//==============================================================================
-	//  Enemy Data
-	//==============================================================================
-
-	//==============================================================================
 	//  MapChip Data
 	//==============================================================================
 	mapChipField_ = new MapChip3D();
@@ -60,12 +48,12 @@ void GameScene::Initialize()
 
 	worldTransformBlocks_.resize(numBlockZAxis);
 	isVisible_.resize(numBlockZAxis);
-	
+
 	for (uint32_t i = 0; i < numBlockZAxis; ++i) {
 		worldTransformBlocks_[i].resize(numBlockXAxis);
 		isVisible_[i].resize(numBlockXAxis, false);
 	}
-	
+
 	for (uint32_t i = 0; i < numBlockZAxis; ++i) {
 		for (uint32_t j = 0; j < numBlockXAxis; ++j) {
 			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
@@ -74,13 +62,27 @@ void GameScene::Initialize()
 				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
 				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
 				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
-	
+
 				worldTransformBlocks_[i][j] = worldTransform;
 				isVisible_[i][j] = true;
 			}
 		}
 	}
 	modelBlock_ = Model::CreateFromOBJ("block", true);
+
+	//==============================================================================
+	//  Player
+	//==============================================================================
+	player_ = new Player3D();
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 10);
+	player_->Initialize(camera_, playerPosition);
+	player_->SetMapChipField(mapChipField_);
+
+	//==============================================================================
+	//  Enemy Data
+	//==============================================================================
+
+	
 
 	//CenterCameraOnPlayer(); or
 	//Initiate Camera target
@@ -166,7 +168,7 @@ void GameScene::Update()
 	//==============================================================================
 	//  Update ImGui
 	//==============================================================================
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+	if (Input::GetInstance()->TriggerKey(DIK_RSHIFT)) {
 		isDebugCameraActive_ = true;
 	}
 	if (isDebugCameraActive_) {
@@ -175,16 +177,41 @@ void GameScene::Update()
 		camera_->matView = debugCamera_->GetCamera().matView;
 		camera_->matProjection = debugCamera_->GetCamera().matProjection;
 		camera_->TransferMatrix();
+
+		if (Input::GetInstance()->TriggerKey(DIK_RETURN)) {
+			isDebugCameraActive_ = false;
+			//PrimitiveDrawer::GetInstance()->SetCamera(camera_);
+		}
 	}
 	else {
 		camera_->UpdateMatrix();
 	}
 
-	//ImGui::Begin("Camera");
-	//ImGui::Text()
-	//ImGui::End();
+	ImGui::Begin("Camera");
+	ImGui::DragFloat3("Camera Rotate", &camera_->rotation_.x, 0.01f, -10.0f, 10.0f);
+	ImGui::DragFloat3("Camera Translate", &camera_->translation_.x, 0.01f, -100.0f, 100.0f);
+	if (ImGui::Button("Reset Camera")) {
+		camera_->rotation_ = { 1.57f, 0.0f, 0.0f };
+		camera_->translation_ = { 0.0f, 25.0f, 0.0f };
+	}
+	
+	ImGui::End();
 
-	//ImGui::Render();
+	ImGui::Begin("Player");
+	WorldTransform& playerTransform = player_->GetTransform();
+	ImGui::DragFloat3("Player Scale", &playerTransform.scale_.x, 0.01f, 0.01f, 10.0f);
+	ImGui::DragFloat3("Player Rotate", &playerTransform.rotation_.x, 0.01f, -10.0f, 10.0f);
+	ImGui::DragFloat3("Player Translate", &playerTransform.translation_.x, 0.05f, -100.0f, 100.0f);
+	if (ImGui::Button("Reset Transform")) {
+		playerTransform.scale_ = { 0.5f, 0.5f, 0.5f };
+		playerTransform.rotation_ = { 0.0f, 0.0f, 0.0f };
+		playerTransform.translation_ = { 0.0f, 0.0f ,0.0f };
+	}
+
+	ImGui::End();
+
+	ImGui::Render();
+
 #endif
 	//==============================================================================
 	//  Update Camera
@@ -224,14 +251,14 @@ void GameScene::Draw()
 	//==============================================================================
 	//  Draw Player + Enemies
 	//==============================================================================
-	player_->Draw();
+	
 	//for (Enemy3D* newEnemy : enemies_) {
 	//	newEnemy->Draw(*camera_);
 	//}
 
 	Model::PostDraw();
 
-	
+	player_->Draw(*camera_);
 
 	Sprite::PreDraw();
 	//==============================================================================

@@ -27,6 +27,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
+	ImGuiManager* imGuiManager = ImGuiManager::GetInstance();
+
 	scene = Scene::kTitle;
 	titleScene = new TitleScene();
 	titleScene->Initialize();
@@ -40,8 +42,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		/// メインループの開始
 		//
 
+		imGuiManager->Begin();
+
 		ChangeScene();
 		UpdateScene();
+
+		imGuiManager->End();
 
 		///描画開始
 		dxCommon->PreDraw();
@@ -50,6 +56,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		DrawScene();
 		AxisIndicator::GetInstance()->Draw();
+
+		imGuiManager->Draw();
 
 		/// 描画終了
 		dxCommon->PostDraw();
