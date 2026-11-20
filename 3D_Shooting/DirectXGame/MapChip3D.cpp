@@ -12,6 +12,10 @@ namespace {
 	};
 }
 
+MapChip3D::MapChip3D() {}
+
+MapChip3D::~MapChip3D() { }
+
 MapChip3D::Rect MapChip3D::GetRectByIndex(uint32_t xIndex, uint32_t zIndex)
 {
 	Rect rect = {};
@@ -21,6 +25,8 @@ MapChip3D::Rect MapChip3D::GetRectByIndex(uint32_t xIndex, uint32_t zIndex)
 	rect.right = center.x + (kBlockWidth_ / 2.0f);
 	rect.front = center.z - (kBlockDepth_ / 2.0f);
 	rect.back = center.z + (kBlockDepth_ / 2.0f);
+	//rect.top = center.y + (kBlockHeight_ / 2.0f);
+	//rect.bottom = center.y - (kBlockHeight_ / 2.0f);
 	return rect;
 }
 
@@ -28,27 +34,27 @@ MapChip3D::IndexSet MapChip3D::GetMapChipIndexByPosition(const Vector3& position
 {
 	IndexSet indexSet = {};
 
-	indexSet.xIndex = static_cast<uint32_t>(std::floor(position.x + (kBlockWidth_ / 2.0f)) / kBlockWidth_);
+	indexSet.xIndex = static_cast<int>(std::floor(position.x / kBlockWidth_));
 
-	//if inverting Z axis is needed,
+	////if inverting Z axis is needed,
 	float invertedZ = (kNumBlockZAxis_ * kBlockDepth_) - position.z;
-	indexSet.zIndex = static_cast<uint32_t>(std::floor(invertedZ - (kBlockDepth_ / 2.0f)) / kBlockDepth_);
+	indexSet.zIndex = static_cast<int>(std::floor(invertedZ / kBlockDepth_));
 
 	// if not inverting Z axis, use the following line instead:
-	//indexSet.zIndex = static_cast<uint32_t>(std::floor(position.z + (kBlockDepth_ / 2.0f)) / kBlockDepth_);
+	//indexSet.zIndex = static_cast<int>(std::floor(position.z + (kBlockDepth_ / 2.0f)) / kBlockDepth_);
 
 	//clamp to valid range to prevent crashes
-	indexSet.xIndex = std::clamp(indexSet.xIndex, 0u, kNumBlockXAxis_ - 1);
-	indexSet.zIndex = std::clamp(indexSet.zIndex, 0u, kNumBlockZAxis_ - 1);
+	indexSet.xIndex = static_cast<uint32_t>(std::clamp(indexSet.xIndex, 0u, kNumBlockXAxis_ - 1));
+	indexSet.zIndex = static_cast<uint32_t>(std::clamp(indexSet.zIndex, 0u, kNumBlockZAxis_ - 1));
 
 	return indexSet;
 }
 
 Vector3 MapChip3D::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t zIndex)
 {
-	float x = static_cast<float>(xIndex) * kBlockWidth_;
-	float y = static_cast<float>(0.0f) * kBlockHeight_; // Assuming y is always 0 for map chips)
-	float z = (kNumBlockZAxis_ - 1 - static_cast<float>(zIndex)) * kBlockDepth_;
+	float x = (static_cast<float>(xIndex) * kBlockWidth_) + (kBlockWidth_ / 2.0f);
+	float y = (static_cast<float>(0.0f) * kBlockHeight_) + (kBlockHeight_ / 2.0f); // Assuming y is always 0 for map chips)
+	float z = ((kNumBlockZAxis_ - 1 - static_cast<float>(zIndex)) * kBlockDepth_) + (kBlockDepth_ / 2.0f);
 	return Vector3{ x, y, z };
 }
 
