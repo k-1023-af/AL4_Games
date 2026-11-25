@@ -17,3 +17,5 @@ $RECYCLE.BIN/
 2D_Action/Generated
 2D_Action/DirectXGame/Resources/EngineShaders
 3D_Shooting/DirectXGame/.vs
+3D_Shooting/Generated/Outputs
+3D_Shooting/Generated

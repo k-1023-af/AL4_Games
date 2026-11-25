@@ -9,6 +9,8 @@ using namespace KamataEngine;
 enum class MapChipType {
 	kBlank,
 	kBlock,
+	kPlayer,
+	kEnemy1,
 };
 
 struct MapChipData {

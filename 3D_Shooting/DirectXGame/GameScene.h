@@ -5,6 +5,7 @@
 #include "MapChip3D.h"
 #include "CameraController.h"
 #include "Fade.h"
+#include "Skydome.h"
 #include "KamataEngine.h"
 
 using namespace KamataEngine;
@@ -22,6 +23,7 @@ public:
 	void Draw();
 	void ChangePhase();
 	void CheckAllCollisions();
+	void GenerateFieldObjects();
 	void CreateHitEffect(const Vector3& position);
 
 	bool IsFinished() const { return finished_; }
@@ -48,8 +50,9 @@ private:
 	//  Entities
 	//==============================================================================
 	Player3D* player_ = nullptr;
+	Enemy3D* enemy1_ = nullptr;
 	WorldUpdate worldUpdater_;
-	//Skydome modelSkyDome_;
+	Skydome modelSkyDome_;
 	MapChip3D* mapChipField_ = nullptr;
 	Fade* fade_ = nullptr;
 
@@ -64,13 +67,13 @@ private:
 	//==============================================================================
 	CameraController* targetCamera_;
 	Camera* camera_ = nullptr;
-	DebugCamera* debugCamera_ = nullptr;
-	PrimitiveDrawer* primitiveDrawer_ = KamataEngine::PrimitiveDrawer::GetInstance();
+	//DebugCamera* debugCamera_ = nullptr;
+	PrimitiveDrawer* primitiveDrawer_ = PrimitiveDrawer::GetInstance();
 
 	//==============================================================================
 	//  Flags
 	//==============================================================================
-	bool isDebugCameraActive_ = false;
+	//bool isDebugCameraActive_ = false;
 	bool finished_ = false;
 
 };

@@ -1,6 +1,8 @@
 #include "Formula.h"
 
 
+
+
 float Length(const Vector3& v1, const Vector3& v2) {
 	float length = sqrtf(
 		(v1.x - v2.x) * (v1.x - v2.x) +
@@ -31,6 +33,7 @@ float EaseIn(float start, float end, float t) {
 	}
 }
 
+
 Vector3 Add(const Vector3& v1, const Vector3& v2) {
 	return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 }
@@ -44,6 +47,9 @@ Vector3 Subtract(const Vector3& v1, const Vector3& v2) {
 }
 
 Vector3 Multiply(const Vector3& v, float scalar) {
+	return { v.x * scalar, v.y * scalar, v.z * scalar };
+}
+Vector3 Multiply(float scalar, const Vector3& v) {
 	return { v.x * scalar, v.y * scalar, v.z * scalar };
 }
 
@@ -103,6 +109,38 @@ Vector3 Lerp(const Vector3& start, const Vector3& end, float t) {
 	result.y = start.y + (end.y - start.y) * t;
 	result.z = start.z + (end.z - start.z) * t;
 
+	return result;
+}
+
+Vector3 EaseOut(const Vector3& start, const Vector3& end, float t) {
+	t = std::clamp(t, 0.0f, 1.0f);
+	//return start + (end - start) * (1 - std::pow(1 - t, 3));
+	Vector3 result = {
+		start.x + (1.0f - (1.0f - t) * (1.0f - t)) * (end.x - start.x),
+		start.y + (1.0f - (1.0f - t) * (1.0f - t)) * (end.y - start.y),
+		start.z + (1.0f - (1.0f - t) * (1.0f - t)) * (end.z - start.z),
+	};
+	return result;
+}
+
+Vector3 EaseIn(const Vector3& start, const Vector3& end, float t) {
+	t = std::clamp(t, 0.0f, 1.0f);
+	//return start + (end - start) * std::pow(t, 3);
+	Vector3 result;
+	if (t < 0.5f) {
+		result = {
+			start.x + (2.0f * t * t) * (end.x - start.x), 
+			start.y + (2.0f * t * t) * (end.y - start.y),
+			start.z + (2.0f * t * t) * (end.z - start.z),
+		};
+	}
+	else {
+		result = { 
+			start.x + (1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) * 0.5f) * (end.x - start.x),
+			start.y + (1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) * 0.5f) * (end.y - start.y),
+			start.z + (1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) * 0.5f) * (end.z - start.z),
+		};
+	}
 	return result;
 }
 
@@ -310,8 +348,6 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 	return result;
 }
 
-
-
 bool isCollisionAABB(const AABB& a, const AABB& b) {
 	if (a.min.x <= b.max.x && a.max.x >= b.min.x &&
 		a.min.y <= b.max.y && a.max.y >= b.min.y &&
@@ -320,6 +356,77 @@ bool isCollisionAABB(const AABB& a, const AABB& b) {
 	}
 	return false;
 }
+
+bool IsCollision(const AABB& aabb, const Line& line) {
+	float tMin = 0.0f;
+	float tMax = 1.0f;
+
+	// X軸
+	if (line.diff.x == 0.0f) {
+		if (line.origin.x < aabb.min.x || line.origin.x > aabb.max.x) {
+			return false;
+		}
+	}
+	else {
+		float t1 = (aabb.min.x - line.origin.x) / line.diff.x;
+		float t2 = (aabb.max.x - line.origin.x) / line.diff.x;
+
+		float tNear = (std::min)(t1, t2);
+		float tFar = (std::max)(t1, t2);
+
+		tMin = (std::max)(tMin, tNear);
+		tMax = (std::min)(tMax, tFar);
+
+		if (tMin > tMax) {
+			return false;
+		}
+	}
+	// Y軸
+	if (line.diff.y == 0.0f) {
+		if (line.origin.y < aabb.min.y || line.origin.y > aabb.max.y) {
+			return false;
+		}
+	}
+	else {
+		float t1 = (aabb.min.y - line.origin.y) / line.diff.y;
+		float t2 = (aabb.max.y - line.origin.y) / line.diff.y;
+
+		float tNear = (std::min)(t1, t2);
+		float tFar = (std::max)(t1, t2);
+
+		tMin = (std::max)(tMin, tNear);
+		tMax = (std::min)(tMax, tFar);
+
+		if (tMin > tMax) {
+			return false;
+		}
+	}
+
+	// Z軸
+	if (line.diff.z == 0.0f) {
+		if (line.origin.z < aabb.min.z || line.origin.z > aabb.max.z) {
+			return false;
+		}
+	}
+	else {
+		float t1 = (aabb.min.z - line.origin.z) / line.diff.z;
+		float t2 = (aabb.max.z - line.origin.z) / line.diff.z;
+
+		float tNear = (std::min)(t1, t2);
+		float tFar = (std::max)(t1, t2);
+
+		tMin = (std::max)(tMin, tNear);
+		tMax = (std::min)(tMax, tFar);
+
+		if (tMin > tMax) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 
 //AABB GetAABB() {
 //	AABB aabb;

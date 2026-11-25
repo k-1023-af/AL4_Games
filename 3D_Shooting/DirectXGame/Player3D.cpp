@@ -110,7 +110,7 @@ void Player3D::Update()
 ////------------------------------------////
 
 // Apply velocity then collide
-	const int zSteps = 8;
+	const int zSteps = 4;
 	for (int i = 0; i < zSteps; ++i) {
 		playerTransform_.translation_.z += velocity_.z / zSteps;
 		MapCollisionZ(info);
@@ -121,7 +121,7 @@ void Player3D::Update()
 	}
 
 	// Horizontal sub-steps
-	const int xSteps = 6;
+	const int xSteps = 4;
 	for (int i = 0; i < xSteps; ++i) {
 		playerTransform_.translation_.x += velocity_.x / xSteps;
 		MapCollisionX(info);
@@ -327,7 +327,7 @@ void Player3D::MapCollisionX(CollisionMapInfo& info)
 {
 	if (!mapChipField_) return;
 
-	const int xSteps = 8;
+	const int xSteps = 4;
 	float stepX = velocity_.x / xSteps;
 
 	Vector3 prevCenter = {
@@ -365,7 +365,7 @@ void Player3D::MapCollisionZ(CollisionMapInfo& info)
 {
 	if (!mapChipField_) return;
 
-	const int zSteps = 8;
+	const int zSteps = 4;
 	float stepZ = velocity_.z / zSteps;
 
 	Vector3 prevCenter = {
