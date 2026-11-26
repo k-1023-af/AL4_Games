@@ -52,7 +52,7 @@ private:
 	Player3D* player_ = nullptr;
 	Enemy3D* enemy1_ = nullptr;
 	WorldUpdate worldUpdater_;
-	Skydome modelSkyDome_;
+	Skydome modelSkydome_;
 	MapChip3D* mapChipField_ = nullptr;
 	Fade* fade_ = nullptr;
 

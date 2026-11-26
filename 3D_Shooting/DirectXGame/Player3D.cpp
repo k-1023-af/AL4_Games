@@ -50,7 +50,7 @@ void Player3D::Update()
 	//  Initial checks
 	//==============================================================================
 	
-
+	currentColor_ = normalColor_;
 	CollisionMapInfo info;
 	info.move = velocity_;
 	objectColor_.SetColor(currentColor_);

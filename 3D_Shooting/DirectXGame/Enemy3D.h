@@ -82,6 +82,7 @@ private:
 	// Behavior variables
 	//=========================================================================
 	Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
+	ObjectColor objectColor_;
 	Vector4 enemyColor_ = { 0.0f, 0.0f, 0.0f };
 	float kWalkSpeed_ = 0.05f;
 	float walkTimer_ = 0.0f;

@@ -15,6 +15,8 @@ void Enemy3D::Initialize(Camera* camera, const Vector3& position)
 	enemyTransform_.rotation_ = { 0.0f, 0.0f, 0.0f };
 	enemyTransform_.translation_ = position;
 	enemyColor_ = { 1.0f, 0.0f, 0.0f, 1.0f };
+	objectColor_.Initialize();
+	objectColor_.SetColor(enemyColor_);
 
 	enemyModel_ = Model::CreateFromOBJ("enemy1", true);
 
@@ -27,6 +29,7 @@ void Enemy3D::Initialize(Camera* camera, const Vector3& position)
 
 void Enemy3D::Update()
 {
+	
 	if (behaviorRequest_ != Behavior::kUnknown) {
 		behavior_ = behaviorRequest_;
 
@@ -63,7 +66,7 @@ void Enemy3D::Update()
 void Enemy3D::Draw(Camera& camera)
 {
 	Model::PreDraw();
-	enemyModel_->Draw(enemyTransform_, camera);
+	enemyModel_->Draw(enemyTransform_, camera, &objectColor_);
 	Model::PostDraw();
 }
 

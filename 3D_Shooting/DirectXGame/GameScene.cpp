@@ -20,7 +20,7 @@ void GameScene::Initialize()
 	mapChipField_->ResetMapChipData(); // Reset the map chip data to default values
 	mapChipField_->LoadMapChipData("./Resources/stage.csv");
 
-	GenerateFieldObjects();
+	//GenerateFieldObjects();
 
 	//==============================================================================
 	//  Player
@@ -53,6 +53,8 @@ void GameScene::Initialize()
 	AxisIndicator::GetInstance()->SetVisible(false);
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());*/
 
+	GenerateFieldObjects();
+
 	targetCamera_ = new CameraController();
 	targetCamera_->Initialize(camera_);
 	targetCamera_->SetTarget(player_);
@@ -61,6 +63,8 @@ void GameScene::Initialize()
 	//CenterCameraOnPlayer(); or
 	//Initiate Camera target
 
+
+	modelSkydome_.Initialize();
 }
 
 void GameScene::Update()
@@ -241,8 +245,9 @@ void GameScene::Draw()
 	//}
 
 	Model::PostDraw();
-
+	modelSkydome_.Draw(*camera_);
 	player_->Draw(*camera_);
+	enemy1_->Draw(*camera_);
 
 	Sprite::PreDraw();
 	//==============================================================================
@@ -292,7 +297,6 @@ void GameScene::GenerateFieldObjects()
 {
 
 	uint32_t numBlockZAxis = mapChipField_->GetNumBlockZAxis();
-	//uint32_t numBlockYAxis = mapChipField_->GetNumBlockYAxis();
 	uint32_t numBlockXAxis = mapChipField_->GetNumBlockXAxis();
 
 	worldTransformBlocks_.resize(numBlockZAxis);
@@ -317,43 +321,58 @@ void GameScene::GenerateFieldObjects()
 			//}
 
 			Vector3 mapPosition = mapChipField_->GetMapChipPositionByIndex(j, i);
+			MapChipType type = mapChipField_->GetMapChipTypeByIndex(j, i);
 
-			switch (mapChipField_->GetMapChipTypeByIndex(j, i)) {
-			case MapChipType::kBlock:
-			
-				WorldTransform* worldTransform = new WorldTransform();
-				worldTransform->Initialize();
-				worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
-				worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
-				worldTransform->translation_ = mapPosition;
-			
-				worldTransformBlocks_[i][j] = worldTransform;
-				isVisible_[i][j] = true;
-			
+			switch (type) {
+				case MapChipType::kBlock:
+				{
+					WorldTransform* worldTransform = new WorldTransform();
+					worldTransform->Initialize();
+					worldTransform->scale_ = { 1.0f, 1.0f, 1.0f };
+					worldTransform->rotation_ = { 0.0f, 0.0f, 0.0f };
+					worldTransform->translation_ = mapPosition;
 
-				break;
-			case MapChipType::kPlayer:
-				// stop multiple instances of player from spawning
-				assert(player_ == nullptr && "自キャラを二重に配置しようとしています");
+					worldTransformBlocks_[i][j] = worldTransform;
+					isVisible_[i][j] = true;
+					break;
+				}
+				case MapChipType::kPlayer:
+				{
+					// stop multiple instances of player from spawning
+					assert(player_ == nullptr && "自キャラを二重に配置しようとしています");
 
-				player_ = new Player3D();
-				Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 10);
-				player_->Initialize(camera_, playerPosition);
-				player_->SetMapChipField(mapChipField_);
-				break;
-			case MapChipType::kEnemy1:
-
-				enemy1_ = new Enemy3D();
-				Vector3 enemy1Position = mapChipField_->GetMapChipPositionByIndex(20, 15);
-				enemy1_->Initialize(camera_, enemy1Position);
-				enemy1_->SetMapChipField(mapChipField_);
-				break;
+					player_ = new Player3D();
+					Vector3 playerPosition = mapPosition;
+					player_->Initialize(camera_, playerPosition);
+					player_->SetMapChipField(mapChipField_);
+					break;
+				}
+				case MapChipType::kEnemy1:
+				{
+					enemy1_ = new Enemy3D();
+					Vector3 enemy1Position = mapPosition;
+					enemy1_->Initialize(camera_, enemy1Position);
+					enemy1_->SetMapChipField(mapChipField_);
+					enemies_.push_back(enemy1_);
+					break;
+				}
+				//case MapChipType::kBlank:
+				//default:
+				//	// nothing to spawn
+				//	break;
 			}
+
 		}
 	}
 	modelBlock_ = Model::CreateFromOBJ("block", true);
 
 
+
+}
+
+void GameScene::CreateHitEffect(const Vector3& position)
+{
+	(void)position;
 
 }
 
@@ -383,7 +402,7 @@ GameScene::~GameScene()
 	//}
 	//
 	delete player_;
-	delete enemy1_;
+	//delete enemy1;
 	delete modelBlock_;
 	//
 	delete mapChipField_;
